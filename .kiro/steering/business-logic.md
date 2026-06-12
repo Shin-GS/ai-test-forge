@@ -6,19 +6,38 @@ inclusion: always
 
 ## 1. 서브도메인 API 등록
 
-- 등록 방식: 클라이언트 라이브러리가 서브도메인 서버 시작 시 OpenAPI JSON을 메인 서버에 HTTP push
+- 등록 방식: **Push 전용** — 클라이언트 라이브러리 또는 수동 업로드로 메인 서버에 전달
 - 등록 정보: 서브도메인 이름, 환경(environment), base URL, OpenAPI JSON (raw)
 - 식별 키: `name + environment` 조합으로 유니크 (같은 서비스의 다른 환경을 구분)
 - 갱신: heartbeat 기반 — 주기적으로 push (push = 등록 + 갱신 + heartbeat 겸용)
 - 상태 관리: 메인 서버에서 등록 시각 + 마지막 heartbeat 시각 기록
 - 자동 삭제: heartbeat 미응답 시 STALE → TTL 초과 시 자동 삭제
 - Swagger 버전 호환: 메인 서버에서 범용 JSON 파서로 처리 (Swagger 2 → OpenAPI 3 변환 레이어 필요 시 추가)
+- **OpenAPI JSON 제공이 기본 전제** — 언어 무관 (Java, Node.js, PHP, Python 등 어디든 OpenAPI 생성 도구 있음)
+
+### 등록 방법 (3가지)
+
+| 방법 | 대상 | 설명 |
+|------|------|------|
+| 클라이언트 라이브러리 (Push) | Spring Boot 서버 | 의존성 추가만으로 자동 등록 + heartbeat |
+| API 직접 호출 (Push) | 모든 언어 | `POST /api/v1/specs/register`에 JSON 전송 (언어별 스크립트로 구현) |
+| 수동 업로드 | OpenAPI URL 없는 서버 | 웹 UI에서 JSON 파일 업로드 또는 채팅으로 등록 |
+
+### 대형 스펙 처리
+
+API 수가 많으면 OpenAPI JSON이 수십 MB가 될 수 있음 (API당 request/response 스키마, example, error response 등 포함).
+
+- **비동기 등록**: 메인 서버는 push 수신 시 즉시 `202 Accepted` 반환 → 백그라운드에서 파싱 + 저장
+- **등록 상태**: REGISTERING → ACTIVE (파싱 완료 후 전환)
+- **heartbeat 최적화**: 스펙 변경 없으면 JSON 해시만 전송 (재전송 불필요). 해시 불일치 시에만 전체 JSON 재전송.
+- **일반 크기 (5MB 이하)**: 동기 처리도 가능 (설정으로 선택)
 
 ### 상태 전이
 
 ```
-[서버 시작] → push → ACTIVE
-[주기적 heartbeat] → ACTIVE 유지
+[push 수신] → REGISTERING (비동기 파싱 중)
+[파싱 완료] → ACTIVE
+[주기적 heartbeat (해시만)] → ACTIVE 유지
 [heartbeat 미응답 N분] → STALE (UI에서 ⚠️ 표시, tool로는 여전히 제공)
 [heartbeat 미응답 M분] → 자동 삭제 (tool에서 제외)
 ```
@@ -29,6 +48,7 @@ inclusion: always
 spec-registry:
   stale-threshold: 5m         # heartbeat 없으면 STALE
   auto-delete-threshold: 30m  # heartbeat 없으면 삭제 (0이면 자동 삭제 비활성화)
+  async-threshold: 5mb        # 이 크기 이상이면 비동기 처리
 ```
 
 ### environment 자동 감지
@@ -37,13 +57,13 @@ spec-registry:
 - CI/CD: 브랜치명을 환경변수로 주입
 - 미설정 시: "default"
 
-### 클라이언트 라이브러리 동작
+### 클라이언트 라이브러리 동작 (Spring Boot용)
 
 1. 서브도메인 서버 시작 → ApplicationReadyEvent 감지
 2. 설정된 Swagger docs URL (예: `/v3/api-docs`) HTTP GET 호출
 3. 응답 JSON을 메인 서버 `/api/v1/specs/register` 엔드포인트로 POST
 4. 실패 시 재시도 (최대 3회, 5초 간격)
-5. 이후 주기적으로 동일 엔드포인트에 push (heartbeat 겸용, 기본 30초 간격)
+5. 이후 주기적으로 heartbeat 전송 (JSON 해시만, 변경 시에만 전체 재전송)
 6. 설정 파일로 제어:
    - `ai-test-forge.server-url`: 메인 서버 주소
    - `ai-test-forge.enabled`: 활성화 여부 (default: true)
@@ -53,6 +73,22 @@ spec-registry:
    - `ai-test-forge.environment`: 환경 식별 (선택, 미설정 시 자동 감지 또는 "default")
    - `ai-test-forge.base-url`: 메인 서버에서 이 서브도메인에 접근 가능한 URL (필수)
    - `ai-test-forge.heartbeat-interval`: heartbeat 주기 (default: 30s)
+
+### 비-Java 서버 연동
+
+클라이언트 라이브러리 없이도 연동 가능. `/api/v1/specs/register` API를 직접 호출하면 됨.
+
+```bash
+# 예: Node.js 서버 시작 스크립트에서
+curl -X POST http://main-server:8080/api/v1/specs/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "payment-service",
+    "environment": "dev",
+    "baseUrl": "http://payment-service:3000",
+    "specJson": "$(cat openapi.json)"
+  }'
+```
 
 ## 2. 채팅 세션
 
@@ -299,11 +335,25 @@ AI: ✅ 레시피 저장 완료 (3단계, 변수 1개)
 
 ### 레시피 vs 직접 대화
 
-| 상황 | 추천 |
-|------|------|
-| 처음 해보는 시나리오 | 직접 대화 (AI가 의존관계 파악) |
-| 반복되는 시나리오 | 레시피 실행 (빠르고 일관됨) |
-| 약간 다른 변형 | 레시피 실행 후 추가 대화로 수정 |
+| 상황 | 추천 | AI 토큰 비용 |
+|------|------|-------------|
+| 처음 해보는 시나리오 | 직접 대화 (AI가 의존관계 파악) | 높음 (의도 파악 + API 선별 + 실행) |
+| 반복되는 시나리오 | 레시피 실행 (빠르고 일관됨) | **거의 0** (AI 비호출, 직접 실행) |
+| 약간 다른 변형 | 레시피 실행 후 추가 대화로 수정 | 낮음 (추가 부분만 AI) |
+
+### 레시피 실행 = AI 비호출
+
+레시피 실행 시에는 AI Agent Loop를 거치지 않고, 저장된 단계를 순차적으로 직접 실행:
+
+```
+[일반 대화]   사용자 → AI 의도파악(토큰) → API 필터(토큰) → 실행루프(토큰) = 비용 큼
+[레시피 실행] 사용자 → 변수 확인 → 저장된 단계 순차 실행 = 비용 거의 0
+```
+
+- 변수(`{{input:...}}`) 부분만 사용자에게 물어봄 (AI 불필요, 단순 프롬프트)
+- `{{auto}}` 변수는 규칙 기반 생성 (랜덤 이메일, 이름 등 — AI 불필요)
+- API 호출 순서/파라미터는 레시피에 이미 정의되어 있으므로 AI 판단 불필요
+- 실패 시에만 AI에게 복구 판단 위임 (선택적)
 
 ### 미결정 사항
 - 레시피 버전 관리 (API 변경 시 레시피 깨짐 대응)
