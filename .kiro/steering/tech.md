@@ -98,6 +98,7 @@ inclusion: always
 - **Spring Boot 3.x** (auto-configuration)
 - **Spring Web** (RestClient for HTTP calls)
 - **spring-boot-configuration-processor** (IDE 지원)
+- **Java 17 타겟 빌드** — Java 17, 21, 25, 27 등 17 이상 모든 버전에서 사용 가능
 
 ### 설계 원칙
 - Swagger 라이브러리에 직접 의존하지 않음 (HTTP로 docs URL 호출)
