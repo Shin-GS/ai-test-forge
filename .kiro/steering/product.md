@@ -1,0 +1,147 @@
+---
+inclusion: always
+---
+
+# 제품 개요
+
+## 서비스 설명
+AI 기반 테스트 데이터 생성 플랫폼.
+여러 서브도메인 프로젝트(마이크로서비스)의 테스트 데이터를 자연어 채팅으로 생성하는 도구.
+오픈소스로 공개하여 여러 회사가 fork해서 자기 환경에 맞게 사용.
+
+## 핵심 가치
+
+1. **서비스 간 의존성을 AI가 알아서 해결** — "입사지원 데이터 만들어줘" → 회원 생성 → 이력서 생성 → 지원 API 호출을 AI가 순서대로 처리
+2. **반복적인 테스트 세팅 시간 절감** — Postman으로 10개 API 순서대로 호출하던 걸 한 문장으로 대체
+3. **자연어로 표현 가능한 테스트 시나리오** — API 스펙을 몰라도 "이런 데이터 만들어줘"로 충분
+
+## 대상 사용자
+- 여러 마이크로서비스에 걸쳐 테스트 데이터가 필요한 백엔드 개발자
+- 테스트 시나리오를 구성하는 QA 엔지니어
+- Swagger/OpenAPI 문서를 사용하는 마이크로서비스 아키텍처 팀
+
+> **운영 활용**: 이 도구에서 검증된 특정 기능(예: 자연어 → API 호출, 크로스 서비스 오케스트레이션)을 떼어내 운영 환경의 자동화 도구로 활용할 수도 있습니다.
+
+## 언어 정책
+- **UI 기본 제공 언어**: 한국어 — 텍스트는 상수/파일로 분리하여 fork 시 교체 용이
+- **AI 응답 언어**: 한국어 (설정으로 변경 가능, 프롬프트 레벨에서 제어)
+- 코드(클래스명, 변수명, 메서드명, API 경로): 영어
+- 에이전트 응답(개발자 소통): 한국어
+- 코드 주석: 한국어 허용
+- i18n 프레임워크: 현재 미도입. 텍스트를 상수로 분리해두면 향후 도입 시 마이그레이션 최소화
+
+## 핵심 기능
+1. **채팅 기반 테스트 데이터 생성** — 자연어 → 멀티 API 오케스트레이션
+2. **AI 에이전트 루프** — 작업 완료까지 반복적 API 호출
+3. **서브도메인 API 등록** — 클라이언트 라이브러리를 통한 OpenAPI 스펙 자동 Push + heartbeat 기반 자동 관리
+4. **서브도메인 인증** — 서브도메인별 로그인, 토큰 관리, API 호출 시 자동 부착
+5. **2단계 전략** — 의도 파악 → 관련 API 필터링 (API 수가 많을 때)
+6. **교체 가능한 AI 모듈** — 인터페이스 기반, 설정으로 OpenAI/Claude/기타 교체
+7. **레시피** — 자주 쓰는 API 호출 패턴 저장/재사용 (대화에서 자동 생성 가능)
+
+## UI 구조
+
+탭 기반 네비게이션. 조작은 채팅 중심, 나머지 탭은 조회/탐색용.
+
+| 탭 | 역할 | 설명 |
+|----|------|------|
+| 💬 채팅 | 메인 | 자연어로 테스트 데이터 생성, 레시피 실행, 설정 변경 |
+| 📡 서브도메인 | 조회 | 등록된 서버 목록/상태, 환경별 필터, API 탐색 |
+| 📋 레시피 | 조회 | 저장된 레시피 목록, 카테고리/검색, 실행 버튼(→ 채팅으로 전환) |
+| ⚙️ 설정 | 설정 | AI 프로바이더, 서브도메인 인증 설정, Agent Loop 파라미터 |
+
+### 설계 원칙
+- 채팅은 여전히 메인 — 모든 "실행"은 채팅에서 일어남
+- 나머지 탭은 "인지 + 탐색" — 뭐가 있는지 보고, 클릭해서 채팅으로 넘기는 구조
+- 대규모 환경 대응 — 서버 15+, 레시피 100+에서도 검색/필터로 탐색 가능
+
+## 기술 스택
+
+| 구분 | 기술 |
+|------|------|
+| 메인 서버 | Java 21+ + Spring Boot 3.x + Gradle (Kotlin DSL) |
+| 웹 UI | React 19 + Vite + TypeScript + Tailwind CSS 4 |
+| 클라이언트 라이브러리 | Java (Spring Boot Starter) |
+| 데이터베이스 | MySQL 8.x |
+| AI | 인터페이스 기반 (OpenAI, Claude 구현체) |
+| API 스펙 | OpenAPI 3.x JSON |
+
+## 프로젝트 구조
+
+```
+ai-test-forge/
+├── packages/
+│   ├── server/              # Spring Boot 메인 서버
+│   │   ├── src/main/java/
+│   │   ├── src/main/resources/
+│   │   └── build.gradle.kts
+│   ├── web/                 # React 채팅 UI
+│   │   ├── src/
+│   │   ├── package.json
+│   │   └── vite.config.ts
+│   └── client-spring/       # Spring Boot Starter (클라이언트 라이브러리)
+│       ├── src/main/java/
+│       └── build.gradle.kts
+├── docs/
+│   ├── design/              # 페이지별 디자인 명세
+│   └── test/                # QA 테스트 체크리스트
+├── .kiro/
+│   ├── agents/
+│   ├── hooks/
+│   └── steering/
+├── .env.example
+├── build.gradle.kts         # 루트 빌드 (멀티 모듈)
+├── settings.gradle.kts
+└── README.md
+```
+
+## 환경변수
+- 모든 시크릿은 `.env` 파일에 관리 (`.env`는 gitignore 대상)
+- `.env.example`에 변수명 템플릿 유지
+- 서버: application.yml에서 `${ENV_VAR:default}` 형태로 참조
+- 서버: `APP_PROFILE` 환경변수로 프로필 전환 (local / dev / prod, 기본값: local)
+- 웹: Vite 환경변수는 `VITE_` 접두사 사용
+
+## 빌드 & 실행
+
+```bash
+# 서버
+cd packages/server && ./gradlew bootRun        # 실행
+cd packages/server && ./gradlew bootJar        # JAR 빌드
+cd packages/server && ./gradlew test           # 테스트
+
+# 웹 UI
+cd packages/web && pnpm dev                    # 개발 서버
+cd packages/web && pnpm build                  # 프로덕션 빌드
+
+# 클라이언트 라이브러리
+cd packages/client-spring && ./gradlew build   # 빌드 + 테스트
+cd packages/client-spring && ./gradlew publishToMavenLocal  # 로컬 퍼블리시
+```
+
+## URL 구조
+
+| 경로 | 대상 | 설명 |
+|------|------|------|
+| `/` | 웹 UI (SPA) | 채팅 인터페이스 (메인) |
+| `/subdomains` | 웹 UI (SPA) | 서브도메인 목록/상태 탭 |
+| `/recipes` | 웹 UI (SPA) | 레시피 목록/검색 탭 |
+| `/settings` | 웹 UI (SPA) | 설정 탭 |
+| `/api/v1/**` | 서버 API | 메인 서버 REST API |
+| `/api/v1/chat/**` | 서버 API | 채팅/대화 엔드포인트 |
+| `/api/v1/specs/**` | 서버 API | API 스펙 관리 (등록, 조회) |
+| `/api/v1/auth/**` | 서버 API | 서브도메인 인증 |
+| `/api/v1/recipes/**` | 서버 API | 레시피 CRUD |
+| `/health` | 서버 | 헬스 체크 |
+
+## API 설계
+- REST API 경로: `/api/v1/{resource}`
+- 헬스 체크: `/health`
+- 웹 UI → 서버 프록시: Vite dev server에서 `/api` → `localhost:8080`
+
+## 로컬 개발 환경
+- local 프로필: Mock AI 서비스 (실제 API 호출 없이 시뮬레이션 응답 반환)
+- 웹 개발 모드: Vite 프록시로 API 포워딩
+
+## 참조 파일
+#[[file:.env.example]]
