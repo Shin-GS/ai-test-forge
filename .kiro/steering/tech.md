@@ -26,6 +26,23 @@ inclusion: always
 - API 프록시: `/api` → `http://localhost:8080` (changeOrigin: true)
 - 빌드 출력: `dist/`
 
+### 실시간 통신 패턴
+
+```
+[BE → FE] SSE (Server-Sent Events)
+  - AI 텍스트 스트리밍
+  - tool_call 실행 지시 (어떤 API를 호출할지)
+  - 완료/에러 알림
+
+[FE → BE] REST POST
+  - 메시지 전송: POST /api/v1/chat/{sessionId}/messages
+  - tool call 결과 전달: POST /api/v1/chat/{sessionId}/tool-result
+
+[FE → 서브도메인] 직접 HTTP 호출 (브라우저)
+  - 쿠키/세션 자동 부착
+  - CORS 필요
+```
+
 ## Backend (Main Server)
 
 ### 핵심 의존성

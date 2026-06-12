@@ -32,6 +32,9 @@ inclusion: always
 | 환경 | Environment | 같은 서비스의 다른 배포 인스턴스 식별자 (dev, feature-login 등) |
 | Heartbeat | Heartbeat | 클라이언트 라이브러리가 주기적으로 메인 서버에 보내는 생존 신호 |
 | 레시피 | Recipe | 자주 사용하는 API 호출 패턴을 저장/재사용하는 템플릿 |
+| 워크스페이스 | Workspace | 유저가 현재 작업할 서브도메인 + 환경 세트를 묶은 단위 |
+| 퀵 액션 | Quick Action | 채팅 화면에 버튼으로 노출되는 자주 쓰는 레시피/명령 |
+| 인증 프로필 | Auth Profile | 서브도메인의 로그인 방식 메타 정보 (이름 + 로그인 페이지 URL) |
 
 ## API 스펙 상태
 

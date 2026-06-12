@@ -127,6 +127,19 @@ while (!completed) {
 - 타임아웃: 전체 루프 타임아웃 (기본 120초)
 - 무한 루프 방지: 동일 API 동일 파라미터로 3회 이상 실패 시 중단 + 사용자에게 보고
 
+### 동시 실행 제한
+
+```yaml
+agent-loop:
+  max-concurrent: 10          # 전체 동시 Agent Loop 수
+  max-per-subdomain: 3        # 같은 서브도메인에 동시 요청 수
+  ai-rate-limit: 60/min       # AI API 호출 속도 제한 (provider rate limit 대응)
+```
+
+- 전체 제한 초과 시: "현재 대기 중입니다 (N명 앞)" 메시지 표시
+- 서브도메인 제한: 테스트 환경 서버 과부하 방지
+- AI rate limit: provider의 rate limit에 맞춰 throttling (초과 시 대기 후 재시도)
+
 ## 4. 2-Stage Strategy (API 수가 많을 때)
 
 대량 API 환경에서 토큰 낭비와 혼란 방지를 위한 전략.
@@ -175,35 +188,104 @@ AI 응답:
 
 ## 5. 서브도메인 인증
 
-### 인증 설정
-- 서브도메인별 로그인 방식 설정:
-  - 로그인 API 경로
-  - 요청 바디 형식 (어떤 필드에 ID/PW를 넣는지)
-  - 토큰 추출 위치 (응답 바디의 어떤 필드, 또는 헤더)
-  - 토큰 부착 방식 (Authorization: Bearer, 커스텀 헤더 등)
+### 인증 방식: 브라우저 직접 로그인
+
+FE가 서브도메인 API를 직접 호출하는 구조이므로, **사용자가 브라우저에서 서브도메인에 직접 로그인**하면 쿠키/세션이 자동으로 유지됨. 메인 서버에 credential을 저장할 필요 없음.
+
+### 인증 프로필 (서브도메인 yml에서 전달)
+
+서브도메인이 push할 때 "나는 이런 로그인 방식이 있어"를 메타 정보로 같이 전달:
+
+```yaml
+# 서브도메인 서버 application.yml
+ai-test-forge:
+  subdomain-name: user-service
+  base-url: http://user.dev.company.com
+  auth:
+    profiles:
+      - name: 개인회원
+        login-page-url: https://user.dev.company.com/login
+      - name: 어드민
+        login-page-url: https://user.dev.company.com/admin/login
+```
+
+- 메인 서버는 이 정보를 받아서 저장 → UI에서 로그인 유도 시 사용
+- 실제 로그인은 사용자가 해당 페이지에서 직접 수행
+- SSO 환경이면 한 번 로그인으로 여러 서브도메인 자동 인증
 
 ### 인증 플로우
-1. 사용자가 웹 UI에서 서브도메인별 로그인 정보 입력
-2. 메인 서버가 해당 서브도메인의 로그인 API 호출
-3. 토큰 획득 → 세션에 저장
-4. AI의 API 호출 시 해당 서브도메인 토큰 자동 부착
 
-### 토큰 관리
-- 세션 단위 저장 (사용자별 + 서브도메인별)
-- 401 감지 시 토큰 만료로 판단 → 사용자에게 재로그인 요청
-- 토큰 갱신 로직은 서브도메인마다 다를 수 있음 → 설정으로 대응
+```
+1. 사용자가 채팅에서 API 호출 시도
+2. FE가 서브도메인 API 직접 호출
+3-a. 성공 → 정상 진행
+3-b. 401 → Agent Loop 일시정지 + 로그인 페이지 링크 제공
+4. 사용자가 로그인 페이지에서 로그인 (새 탭 또는 팝업)
+5. 로그인 완료 → Agent Loop 재개
+```
+
+### UI 표현
+
+```
+📡 user-service (dev)
+  🔓 개인회원 (로그인됨)
+  🔒 어드민 [로그인하기] → https://user.dev.company.com/admin/login
+
+📡 payment-service (dev)
+  🔓 (SSO 로그인됨)
+```
+
+### SSO / 공유 인증
+
+- 같은 도메인 쿠키를 공유하는 서비스들은 한 번 로그인으로 모두 인증됨
+- 별도 설정 불필요 — 브라우저가 쿠키를 자동으로 부착하니까
+- 인증 프로필의 `login-page-url`은 SSO 로그인 페이지를 가리키면 됨
 
 ## 6. Tool Execution (API 호출 실행)
 
-- AI가 tool call 요청 시 실제 서브도메인 API 호출
-- 인증 토큰 자동 부착
-- 요청 구성: HTTP method, URL, headers, body (AI가 결정)
-- 응답 처리: HTTP status + response body를 AI에게 결과로 전달
-- 에러 처리:
-  - 4xx: 에러 메시지를 AI에게 전달 (AI가 수정 후 재시도 판단)
-  - 5xx: 에러 발생 사실을 AI에게 전달 + 재시도 카운트
-  - Timeout: 타임아웃 사실을 AI에게 전달
-  - 401: 토큰 만료 → 사용자에게 재로그인 유도
+### 실행 구조: FE 직접 호출
+
+AI 판단은 BE에서, 실제 서브도메인 API 호출은 **브라우저(FE)**가 수행.
+이를 통해 브라우저의 쿠키/세션/토큰이 자동으로 서브도메인에 전달됨.
+
+```
+1. 사용자: "입사지원 데이터 만들어줘"
+2. FE → BE: 메시지 전송 (SSE 연결)
+3. BE: AI 판단 → tool_call 이벤트 (SSE로 FE에 지시)
+   { "subdomain": "user-service", "method": "POST", "path": "/api/members", "body": {...} }
+4. FE: 서브도메인 API 직접 호출 (브라우저 쿠키/세션 자동 부착)
+5. FE → BE: 결과 전달 (POST /api/v1/chat/{sessionId}/tool-result)
+6. BE: AI 다음 판단 → 반복...
+7. BE: 완료 → SSE done 이벤트
+```
+
+### 왜 FE 직접 호출인가
+- 브라우저에 이미 있는 인증 정보(쿠키/세션/토큰) 그대로 사용 → credential 저장 불필요
+- SSO 환경에서 한 번 로그인하면 모든 서브도메인 자동 인증
+- 메인 서버에 서브도메인 비밀번호를 저장할 보안 부담 제거
+- 서브도메인 서버는 CORS 허용만 추가하면 됨
+
+### 사용자 경험
+- 사용자는 한 번 메시지를 보내고 기다리기만 하면 됨
+- FE가 자동으로 API 호출 + 결과 전달을 반복 (사용자 개입 없음)
+- UI에 진행 상태 표시:
+  ```
+  🔄 API 호출 중... (3/6)
+  ├ ✅ 회원 생성 (user-service)
+  ├ ✅ 이력서 생성 (resume-service)
+  └ ⏳ 입사지원 처리 중... (recruit-service)
+  ```
+
+### CORS 요구사항
+- 서브도메인 서버가 AI Test Forge 도메인에서의 요청을 허용해야 함
+- `Access-Control-Allow-Origin: https://test-forge.company.com`
+- `Access-Control-Allow-Credentials: true` (쿠키 전송 시)
+
+### 에러 처리
+- 4xx: 에러 응답을 BE에 전달 → AI가 수정 후 재시도 판단
+- 5xx: 에러 사실을 BE에 전달 + 재시도 카운트
+- 네트워크 에러: FE에서 감지 → BE에 전달
+- 401: 인증 만료 → 사용자에게 재로그인 페이지 링크 제공, Agent Loop 일시정지
 
 ## 7. AI 모듈 (교체 가능)
 
@@ -234,16 +316,112 @@ public interface AiService {
 
 ## 9. 보안
 
-- 서브도메인 인증은 각 서버 자체의 로그인 API 활용 (별도 인증 서버 없음)
-- 메인 서버 자체 인증: 초기에는 미구현 (로컬/사내 네트워크 사용 전제)
-- 서브도메인 비밀번호: 메인 서버 DB에 암호화 저장 (AES)
+### 메인 서버 인증 (AI Test Forge 자체 로그인)
+- 이 서비스 자체에 로그인 페이지 존재 (`/login`)
+- 로그인하지 않으면 모든 기능 접근 불가
+- 초기 구현: ID/PW (관리자가 계정 생성)
+- 향후 확장: SSO (Google, GitHub, 사내 LDAP/AD)
+- JWT 기반 세션 유지
+
+### 서브도메인 보안
+- 서브도메인 인증은 브라우저 쿠키/세션 기반 (FE 직접 호출)
+- 메인 서버에 서브도메인 credential 저장하지 않음 (보안 부담 제거)
+- CORS: 서브도메인 서버가 AI Test Forge 도메인 허용 필요
 - API 스펙에 민감정보 포함 여부 주의 (OpenAPI JSON에 example 값 등)
 
-## 10. 미결정 사항
+## 10. 멀티 유저 + 워크스페이스
+
+### 멀티 유저
+- 사내 팀이 동시에 사용하는 환경 전제
+- 유저별 데이터 분리: 채팅 세션, 인증 토큰, 워크스페이스, 레시피(개인/공유)
+- 메인 서버 인증: SSO 또는 ID/PW (초기 구현은 ID/PW, 향후 SSO)
+
+### 워크스페이스 (Workspace)
+
+유저가 "지금 작업할 서버 세트"를 구성하는 개념.
+
+서브도메인 서버가 30개 + K8s feature 환경까지 있으면, 매번 환경을 지정하는 건 비현실적.
+워크스페이스로 한 번 구성해두면 이후 채팅에서 환경 지정 없이 사용 가능.
+
+**예시:**
+```
+"로그인 리팩토링" 워크스페이스
+  - user-service → feature-login
+  - auth-service → feature-login
+  - payment-service → dev          ← feature 없으니 dev 사용
+  - (나머지는 기본 환경 dev 자동 적용)
+```
+
+**동작:**
+- 채팅 시작 시 활성 워크스페이스 기준으로 서버 세트 결정
+- 워크스페이스에 명시 안 한 서브도메인은 기본 환경(dev) 사용
+- 워크스페이스 전환: 상단 드롭다운 또는 "워크스페이스 바꿔줘"
+- 워크스페이스 CRUD: 설정 탭 또는 채팅으로
+
+**DB 구조:**
+```
+USER: id, email, name, auth_provider, ...
+WORKSPACE: id, user_id, name, is_default, created_at
+WORKSPACE_MAPPING: id, workspace_id, subdomain_name, environment
+AUTH_TOKEN: id, user_id, subdomain_name, environment, encrypted_credential, token, expires_at
+```
+
+## 11. 신입 친화 UX
+
+이 도구를 처음 접하는 사람도 고민 없이 사용할 수 있어야 함.
+
+### 온보딩 + 퀵 액션
+- 처음 접속 시: "이런 것들을 할 수 있어요" 가이드 표시
+- 빈 채팅 화면에 퀵 액션 버튼 노출 (자주 쓰는 레시피를 버튼으로):
+  ```
+  🚀 빠른 시작
+  [개인회원 생성]  [입사지원 데이터]  [결제 테스트]
+  
+  또는 자유롭게 입력하세요...
+  ```
+
+### 서브도메인 설명 자동 생성
+- OpenAPI JSON의 `info.description` 필드를 자동 표시
+- `info.description`이 없거나 부실하면: 등록 시 AI가 API 목록을 보고 한 줄 요약 자동 생성
+- 수동 수정 가능
+
+### 로그인 가이드
+- 서브도메인 미로그인 상태에서 API 호출 시도 시:
+  ```
+  ⚠️ recruit-service에 로그인이 필요합니다.
+  [웹에서 로그인] → {login-page-url}
+  또는: "recruit-service에 test@example.com / pw123으로 로그인해줘"
+  ```
+- 서브도메인 탭에서 로그인 상태 시각화:
+  - 🔓 로그인됨 (계정 표시)
+  - 🔒 미로그인 [로그인하기] 버튼
+
+### 결과 "다음 액션" 힌트
+- API 호출 결과 표시 후 "다음으로 할 수 있는 것" 제안:
+  ```
+  ✅ 개인회원 생성 완료 (ID: 456)
+  
+  💡 다음으로:
+  [이 회원으로 이력서 생성]  [이 회원으로 로그인 테스트]
+  ```
+- **기본 OFF** — 설정에서 ON 가능, 또는 결과 아래 "💡 더 할 수 있는 것 보기" 버튼 클릭 시에만 AI 호출 (토큰 절약)
+- AI가 현재 워크스페이스의 다른 서비스 API를 보고 관련 가능한 액션을 제안
+
+### 에러 해석 + 가이드
+- API 호출 실패 시 에러 코드만이 아니라 원인 추정 + 해결 방법 제시:
+  ```
+  ❌ POST /api/applications 실패 (403 Forbidden)
+  
+  🔍 원인 추정: recruit-service에 로그인되어 있지 않습니다.
+  💡 해결: "recruit-service에 로그인해줘" 라고 말해보세요.
+      또는 [웹에서 로그인] → https://recruit.dev.internal.com/login
+  ```
+
+## 12. 미결정 사항
 
 - 대화 히스토리 영구 저장 여부 (현재는 세션 단위만 보관)
-- 멀티 유저 지원 범위 (현재는 단일 사용자 가정)
 - Client Library 배포 방식 (Maven Central? GitHub Packages? JitPack?)
+- 메인 서버 인증 구체 방식 (SSO 연동 범위, 초기 ID/PW의 계정 관리)
 
 ## 11. 실시간 업데이트 (SSE)
 
