@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>채팅 — AI Test Forge</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .chat-layout { display:flex; flex:1; overflow:hidden; }
+    .chat-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    .chat-messages { flex:1; overflow-y:auto; padding:var(--space-4); }
+    .chat-input-area { padding:var(--space-3) var(--space-4); border-top:1px solid var(--color-border); background:var(--color-bg-secondary); }
+    .chat-input-wrapper { display:flex; gap:var(--space-2); align-items:flex-end; max-width:800px; margin:0 auto; }
+    .chat-input { flex:1; padding:var(--space-3); font-size:var(--font-size-sm); font-family:var(--font-family); color:var(--color-text-primary); background:var(--color-bg-tertiary); border:1px solid var(--color-border); border-radius:var(--radius-lg); outline:none; resize:none; min-height:44px; max-height:120px; }
+    .chat-input:focus { border-color:var(--color-accent); }
+    .chat-input:disabled { opacity:0.5; cursor:not-allowed; }
+    .onboarding { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:var(--space-6); text-align:center; }
+    .onboarding__title { font-size:var(--font-size-xl); font-weight:var(--font-weight-semibold); }
+    .onboarding__actions { display:flex; gap:var(--space-3); flex-wrap:wrap; justify-content:center; }
+    .onboarding__hint { color:var(--color-text-tertiary); font-size:var(--font-size-sm); }
+    .messages-container { max-width:800px; margin:0 auto; width:100%; }
+    .result-list { list-style:none; margin:var(--space-2) 0; padding:0; }
+    .result-list li { padding:var(--space-1) 0; font-size:var(--font-size-sm); }
+    .result-list li::before { content:"• "; color:var(--color-text-tertiary); }
+    .detail-toggle { display:inline-flex; align-items:center; gap:var(--space-1); font-size:var(--font-size-xs); color:var(--color-accent); cursor:pointer; margin-top:var(--space-2); border:none; background:none; font-family:var(--font-family); }
+    .hint-area { margin-top:var(--space-3); padding-top:var(--space-3); border-top:1px solid var(--color-border); }
+    .hint-area__title { font-size:var(--font-size-xs); color:var(--color-text-tertiary); margin-bottom:var(--space-2); }
+    .hint-actions { display:flex; gap:var(--space-2); flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+  <nav class="case-switcher">
+    <button class="active" data-case="1">첫 접속</button>
+    <button data-case="2">대화 진행 중</button>
+    <button data-case="3">대화 완료</button>
+    <button data-case="4">인증 필요 (401)</button>
+    <button data-case="5">에러 발생</button>
+    <button data-case="6">레시피 실행</button>
+  </nav>
+
+  <!-- Case 1: 첫 접속 -->
+  <div class="screen active" id="case-1">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item active" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <aside class="sidebar">
+          <div style="padding:var(--space-3) var(--space-4);font-size:var(--font-size-xs);color:var(--color-text-tertiary);font-weight:var(--font-weight-medium);">채팅 세션</div>
+          <button class="sidebar__item">어제 — 회원 생성 테스트</button>
+          <button class="sidebar__item">6/10 — 입사지원 풀세트</button>
+          <button class="sidebar__item">6/9 — 결제 플로우</button>
+          <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-border);margin-top:auto;">
+            <button class="btn btn--ghost btn--sm" style="width:100%;">+ 새 대화</button>
+          </div>
+        </aside>
+        <div class="chat-area">
+          <div class="chat-messages">
+            <div class="onboarding">
+              <div class="onboarding__title">🚀 빠른 시작</div>
+              <div class="onboarding__actions">
+                <button class="quick-action">👤 개인회원 생성</button>
+                <button class="quick-action">📋 입사지원 데이터</button>
+                <button class="quick-action">💳 결제 테스트</button>
+                <button class="quick-action">🔑 어드민 계정 생성</button>
+              </div>
+              <div class="onboarding__hint">또는 자유롭게 입력하세요...</div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-input" rows="1" placeholder="메시지를 입력하세요..."></textarea>
+              <button class="btn btn--primary">전송</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 2: 대화 진행 중 -->
+  <div class="screen" id="case-2">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item active" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <aside class="sidebar">
+          <div style="padding:var(--space-3) var(--space-4);font-size:var(--font-size-xs);color:var(--color-text-tertiary);font-weight:var(--font-weight-medium);">채팅 세션</div>
+          <button class="sidebar__item active">◉ 입사지원 데이터 생성</button>
+          <button class="sidebar__item">어제 — 회원 생성 테스트</button>
+          <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-border);margin-top:auto;">
+            <button class="btn btn--ghost btn--sm" style="width:100%;">+ 새 대화</button>
+          </div>
+        </aside>
+        <div class="chat-area">
+          <div class="chat-messages">
+            <div class="messages-container">
+              <div class="message message--user">
+                <div class="message__avatar">👤</div>
+                <div class="message__content">123번 포지션에 입사지원 테스트 데이터 만들어줘</div>
+              </div>
+              <div class="message message--ai">
+                <div class="message__avatar">🤖</div>
+                <div class="message__content">
+                  네, 포지션 123에 입사지원하려면 회원과 이력서가 필요합니다. 순서대로 생성할게요.
+                  <div class="progress-steps" style="margin-top:var(--space-3);">
+                    <div class="progress-steps__header">🔄 API 호출 중... (2/3)</div>
+                    <div class="progress-steps__item progress-steps__item--done">✅ user-service POST /api/members → 회원 생성 (ID: 456)</div>
+                    <div class="progress-steps__item progress-steps__item--done">✅ resume-service POST /api/resumes → 이력서 생성 (ID: 789)</div>
+                    <div class="progress-steps__item progress-steps__item--active">⏳ recruit-service POST /api/applications → 처리 중...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-input" rows="1" placeholder="AI 응답 대기 중..." disabled></textarea>
+              <button class="btn btn--primary" disabled>전송</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 3: 대화 완료 -->
+  <div class="screen" id="case-3">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item active" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <aside class="sidebar">
+          <div style="padding:var(--space-3) var(--space-4);font-size:var(--font-size-xs);color:var(--color-text-tertiary);font-weight:var(--font-weight-medium);">채팅 세션</div>
+          <button class="sidebar__item active">◉ 입사지원 데이터 생성</button>
+          <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-border);margin-top:auto;">
+            <button class="btn btn--ghost btn--sm" style="width:100%;">+ 새 대화</button>
+          </div>
+        </aside>
+        <div class="chat-area">
+          <div class="chat-messages">
+            <div class="messages-container">
+              <div class="message message--user">
+                <div class="message__avatar">👤</div>
+                <div class="message__content">123번 포지션에 입사지원 테스트 데이터 만들어줘</div>
+              </div>
+              <div class="message message--ai">
+                <div class="message__avatar">🤖</div>
+                <div class="message__content">
+                  <strong>✅ 입사지원 데이터 생성 완료</strong>
+                  <ul class="result-list">
+                    <li>회원: test_user_42@example.com (ID: 456)</li>
+                    <li>이력서: "풀스택 개발자 이력서" (ID: 789)</li>
+                    <li>입사지원: 포지션 123에 지원 완료 (ID: 1011)</li>
+                  </ul>
+                  <button class="detail-toggle">상세 보기 ▾</button>
+                  <div class="hint-area">
+                    <div class="hint-area__title">💡 더 할 수 있는 것</div>
+                    <div class="hint-actions">
+                      <button class="quick-action" style="font-size:var(--font-size-xs);padding:var(--space-1) var(--space-3);">이 회원으로 로그인 테스트</button>
+                      <button class="quick-action" style="font-size:var(--font-size-xs);padding:var(--space-1) var(--space-3);">다른 포지션에도 지원</button>
+                      <button class="quick-action" style="font-size:var(--font-size-xs);padding:var(--space-1) var(--space-3);">이 작업 레시피로 저장</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-input" rows="1" placeholder="메시지를 입력하세요..."></textarea>
+              <button class="btn btn--primary">전송</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 4: 인증 필요 -->
+  <div class="screen" id="case-4">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item active" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <aside class="sidebar">
+          <div style="padding:var(--space-3) var(--space-4);font-size:var(--font-size-xs);color:var(--color-text-tertiary);font-weight:var(--font-weight-medium);">채팅 세션</div>
+          <button class="sidebar__item active">◉ 입사지원 데이터 생성</button>
+          <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-border);margin-top:auto;">
+            <button class="btn btn--ghost btn--sm" style="width:100%;">+ 새 대화</button>
+          </div>
+        </aside>
+        <div class="chat-area">
+          <div class="chat-messages">
+            <div class="messages-container">
+              <div class="message message--user">
+                <div class="message__avatar">👤</div>
+                <div class="message__content">123번 포지션에 입사지원 만들어줘</div>
+              </div>
+              <div class="message message--ai">
+                <div class="message__avatar">🤖</div>
+                <div class="message__content">
+                  네, 순서대로 생성할게요.
+                  <div class="progress-steps" style="margin-top:var(--space-3);">
+                    <div class="progress-steps__header">❌ API 호출 중단 (1/3)</div>
+                    <div class="progress-steps__item progress-steps__item--done">✅ user-service POST /api/members → 회원 생성 (ID: 456)</div>
+                    <div class="progress-steps__item" style="color:var(--color-error);">❌ recruit-service POST /api/applications → 401 Unauthorized</div>
+                  </div>
+                  <div class="alert alert--warning" style="margin-top:var(--space-3);">
+                    <div>
+                      <strong>⚠️ recruit-service에 로그인이 필요합니다.</strong>
+                      <div style="margin-top:var(--space-2);display:flex;gap:var(--space-2);flex-wrap:wrap;">
+                        <a href="#" class="btn btn--secondary btn--sm">🔗 개인회원 로그인 →</a>
+                        <a href="#" class="btn btn--secondary btn--sm">🔗 어드민 로그인 →</a>
+                      </div>
+                      <div style="margin-top:var(--space-3);">
+                        <button class="btn btn--primary btn--sm">로그인 완료 — 계속 진행</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-input" rows="1" placeholder="로그인 후 '계속 진행' 버튼을 눌러주세요" disabled></textarea>
+              <button class="btn btn--primary" disabled>전송</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 5: 에러 발생 -->
+  <div class="screen" id="case-5">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item active" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <aside class="sidebar">
+          <div style="padding:var(--space-3) var(--space-4);font-size:var(--font-size-xs);color:var(--color-text-tertiary);font-weight:var(--font-weight-medium);">채팅 세션</div>
+          <button class="sidebar__item active">◉ 결제 테스트</button>
+          <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-border);margin-top:auto;">
+            <button class="btn btn--ghost btn--sm" style="width:100%;">+ 새 대화</button>
+          </div>
+        </aside>
+        <div class="chat-area">
+          <div class="chat-messages">
+            <div class="messages-container">
+              <div class="message message--user">
+                <div class="message__avatar">👤</div>
+                <div class="message__content">결제 테스트 데이터 만들어줘</div>
+              </div>
+              <div class="message message--ai">
+                <div class="message__avatar">🤖</div>
+                <div class="message__content">
+                  <div class="progress-steps" style="margin-bottom:var(--space-3);">
+                    <div class="progress-steps__header">❌ 오류 발생</div>
+                    <div class="progress-steps__item progress-steps__item--done">✅ user-service POST /api/members → 회원 생성 (ID: 789)</div>
+                    <div class="progress-steps__item" style="color:var(--color-error);">❌ payment-service POST /api/payments → 500 Internal Server Error</div>
+                  </div>
+                  <div class="alert alert--error">
+                    <div>
+                      <strong>❌ payment-service에서 서버 오류가 발생했습니다.</strong>
+                      <div style="margin-top:var(--space-1);color:var(--color-text-secondary);font-size:var(--font-size-xs);">
+                        🔍 원인 추정: payment-service 서버가 불안정하거나, 필수 파라미터가 누락되었을 수 있습니다.
+                      </div>
+                      <div style="margin-top:var(--space-3);display:flex;gap:var(--space-2);">
+                        <button class="btn btn--primary btn--sm">🔄 재시도</button>
+                        <button class="btn btn--secondary btn--sm">다른 방법으로 시도</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-input" rows="1" placeholder="메시지를 입력하세요..."></textarea>
+              <button class="btn btn--primary">전송</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 6: 레시피 실행 -->
+  <div class="screen" id="case-6">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item active" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <aside class="sidebar">
+          <div style="padding:var(--space-3) var(--space-4);font-size:var(--font-size-xs);color:var(--color-text-tertiary);font-weight:var(--font-weight-medium);">채팅 세션</div>
+          <button class="sidebar__item active">◉ 레시피 실행</button>
+          <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-border);margin-top:auto;">
+            <button class="btn btn--ghost btn--sm" style="width:100%;">+ 새 대화</button>
+          </div>
+        </aside>
+        <div class="chat-area">
+          <div class="chat-messages">
+            <div class="messages-container">
+              <div style="padding:var(--space-2) var(--space-4);font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-align:center;">
+                📋 레시피 "입사지원 풀세트" 실행
+              </div>
+              <div class="message message--ai">
+                <div class="message__avatar">🤖</div>
+                <div class="message__content">레시피 "입사지원 풀세트"를 실행합니다.<br>포지션 ID를 입력해주세요:</div>
+              </div>
+              <div class="message message--user">
+                <div class="message__avatar">👤</div>
+                <div class="message__content">456</div>
+              </div>
+              <div class="message message--ai">
+                <div class="message__avatar">🤖</div>
+                <div class="message__content">
+                  <div class="progress-steps" style="margin-bottom:var(--space-3);">
+                    <div class="progress-steps__header">📋 레시피 실행 완료 (3/3)</div>
+                    <div class="progress-steps__item progress-steps__item--done">✅ Step 1: user-service 회원 생성 (ID: 112)</div>
+                    <div class="progress-steps__item progress-steps__item--done">✅ Step 2: resume-service 이력서 생성 (ID: 334)</div>
+                    <div class="progress-steps__item progress-steps__item--done">✅ Step 3: recruit-service 입사지원 (ID: 556)</div>
+                  </div>
+                  <strong>✅ 레시피 실행 완료</strong>
+                  <span class="badge badge--info" style="margin-left:var(--space-2);">AI 비호출 · 직접 실행</span>
+                  <ul class="result-list">
+                    <li>회원: auto_7f2k@example.com (ID: 112)</li>
+                    <li>이력서: "자동 생성 이력서" (ID: 334)</li>
+                    <li>입사지원: 포지션 456 지원 완료 (ID: 556)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-input" rows="1" placeholder="메시지를 입력하세요..."></textarea>
+              <button class="btn btn--primary">전송</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.case-switcher button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.case-switcher button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('case-' + btn.dataset.case).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

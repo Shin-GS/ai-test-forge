@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>레시피 — AI Test Forge</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .recipe-page {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-6);
+    }
+    .recipe-page__inner {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .filter-bar {
+      display: flex;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+      align-items: center;
+    }
+    .filter-bar .input { max-width: 300px; }
+    .section-title {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-tertiary);
+      margin-bottom: var(--space-3);
+      margin-top: var(--space-6);
+    }
+    .section-title:first-of-type { margin-top: 0; }
+    .recipe-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .recipe-card {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      transition: all var(--transition-fast);
+    }
+    .recipe-card:hover {
+      border-color: var(--color-border-light);
+    }
+    .recipe-card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-2);
+    }
+    .recipe-card__name {
+      font-weight: var(--font-weight-semibold);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .recipe-card__usage {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+    }
+    .recipe-card__desc {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+    }
+    .recipe-card__meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-bottom: var(--space-3);
+    }
+    .recipe-card__tags {
+      display: flex;
+      gap: var(--space-1);
+    }
+    .recipe-tag {
+      padding: 2px 8px;
+      background: var(--color-bg-tertiary);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+    .recipe-card__actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+    /* 상세 */
+    .recipe-detail {
+      padding: var(--space-6);
+    }
+    .recipe-steps {
+      margin: var(--space-4) 0;
+    }
+    .recipe-step {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      background: var(--color-bg-tertiary);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-2);
+      font-size: var(--font-size-sm);
+    }
+    .recipe-step__num {
+      width: 24px;
+      height: 24px;
+      background: var(--color-accent-subtle);
+      color: var(--color-accent);
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      flex-shrink: 0;
+    }
+    .recipe-step__content {
+      flex: 1;
+    }
+    .recipe-step__api {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      margin-top: var(--space-1);
+    }
+    .recipe-var {
+      color: var(--color-accent);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+    }
+    /* 빈 상태 */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-12);
+      text-align: center;
+    }
+    .empty-state__icon { font-size: 3rem; margin-bottom: var(--space-4); }
+    .empty-state__title {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+  </style>
+</head>
+<body>
+  <nav class="case-switcher">
+    <button class="active" data-case="1">목록 (정상)</button>
+    <button data-case="2">상세</button>
+    <button data-case="3">빈 상태</button>
+  </nav>
+
+  <!-- ==================== Case 1: 목록 ==================== -->
+  <div class="screen active" id="case-1">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item active" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="recipe-page">
+          <div class="recipe-page__inner">
+            <div class="filter-bar">
+              <input class="input" placeholder="🔍 레시피 검색..." />
+              <button class="btn btn--secondary btn--sm">태그: 전체 ▾</button>
+            </div>
+            <div class="section-title">⭐ 자주 사용</div>
+            <div class="recipe-list">
+              <div class="recipe-card">
+                <div class="recipe-card__header">
+                  <div class="recipe-card__name">📋 입사지원 풀세트</div>
+                  <div class="recipe-card__usage">⭐ ×12</div>
+                </div>
+                <div class="recipe-card__desc">회원 생성 → 이력서 생성 → 포지션에 지원</div>
+                <div class="recipe-card__meta">
+                  <div class="recipe-card__tags">
+                    <span class="recipe-tag">#채용</span>
+                    <span class="recipe-tag">#회원</span>
+                  </div>
+                  <span>3단계</span>
+                  <span>변수 1개</span>
+                </div>
+                <div class="recipe-card__actions">
+                  <button class="btn btn--primary btn--sm">▶ 실행</button>
+                  <button class="btn btn--secondary btn--sm">상세 보기</button>
+                </div>
+              </div>
+              <div class="recipe-card">
+                <div class="recipe-card__header">
+                  <div class="recipe-card__name">📋 개인회원 + 결제 데이터</div>
+                  <div class="recipe-card__usage">⭐ ×8</div>
+                </div>
+                <div class="recipe-card__desc">개인회원 생성 → 카드 등록 → 테스트 결제</div>
+                <div class="recipe-card__meta">
+                  <div class="recipe-card__tags">
+                    <span class="recipe-tag">#회원</span>
+                    <span class="recipe-tag">#결제</span>
+                  </div>
+                  <span>4단계</span>
+                  <span>변수 0개 (전체 자동)</span>
+                </div>
+                <div class="recipe-card__actions">
+                  <button class="btn btn--primary btn--sm">▶ 실행</button>
+                  <button class="btn btn--secondary btn--sm">상세 보기</button>
+                </div>
+              </div>
+            </div>
+            <div class="section-title">전체</div>
+            <div class="recipe-list">
+              <div class="recipe-card">
+                <div class="recipe-card__header">
+                  <div class="recipe-card__name">📋 어드민 계정 + 권한 설정</div>
+                  <div class="recipe-card__usage">⭐ ×3</div>
+                </div>
+                <div class="recipe-card__desc">어드민 계정 생성 → 역할 부여 → 대시보드 접근</div>
+                <div class="recipe-card__meta">
+                  <div class="recipe-card__tags"><span class="recipe-tag">#어드민</span></div>
+                  <span>3단계</span>
+                  <span>변수 1개</span>
+                </div>
+                <div class="recipe-card__actions">
+                  <button class="btn btn--primary btn--sm">▶ 실행</button>
+                  <button class="btn btn--secondary btn--sm">상세 보기</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Case 2: 상세 ==================== -->
+  <div class="screen" id="case-2">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item active" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="recipe-page">
+          <div class="recipe-page__inner">
+            <button style="font-size:var(--font-size-sm);color:var(--color-accent);border:none;background:none;cursor:pointer;margin-bottom:var(--space-4);font-family:var(--font-family);">← 목록으로</button>
+            <h2 style="font-size:var(--font-size-xl);font-weight:var(--font-weight-bold);margin-bottom:var(--space-2);">📋 입사지원 풀세트</h2>
+            <p style="color:var(--color-text-secondary);font-size:var(--font-size-sm);margin-bottom:var(--space-4);">회원 생성 → 이력서 생성 → 포지션에 지원</p>
+            <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4);flex-wrap:wrap;">
+              <span class="recipe-tag">#채용</span>
+              <span class="recipe-tag">#회원</span>
+              <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">총 12회 사용 · 마지막 사용: 오늘</span>
+            </div>
+            <div class="recipe-steps">
+              <div class="recipe-step">
+                <div class="recipe-step__num">1</div>
+                <div class="recipe-step__content">
+                  <div>회원 생성</div>
+                  <div class="recipe-step__api">user-service POST /api/members</div>
+                  <div style="margin-top:var(--space-1);">email: <span class="recipe-var">{{auto}}</span>, name: <span class="recipe-var">{{auto}}</span></div>
+                </div>
+              </div>
+              <div class="recipe-step">
+                <div class="recipe-step__num">2</div>
+                <div class="recipe-step__content">
+                  <div>이력서 생성</div>
+                  <div class="recipe-step__api">resume-service POST /api/resumes</div>
+                  <div style="margin-top:var(--space-1);">memberId: <span class="recipe-var">{{Step1.memberId}}</span>, title: <span class="recipe-var">{{auto}}</span></div>
+                </div>
+              </div>
+              <div class="recipe-step">
+                <div class="recipe-step__num">3</div>
+                <div class="recipe-step__content">
+                  <div>입사지원</div>
+                  <div class="recipe-step__api">recruit-service POST /api/applications</div>
+                  <div style="margin-top:var(--space-1);">positionId: <span class="recipe-var">{{input:포지션ID}}</span>, resumeId: <span class="recipe-var">{{Step2.resumeId}}</span></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:var(--space-2);">
+              <button class="btn btn--primary">▶ 실행</button>
+              <button class="btn btn--secondary">수정</button>
+              <button class="btn btn--danger">삭제</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Case 3: 빈 상태 ==================== -->
+  <div class="screen" id="case-3">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace" style="display:none;"></div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item active" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="recipe-page">
+          <div class="empty-state">
+            <div class="empty-state__icon">📋</div>
+            <div class="empty-state__title">저장된 레시피가 없습니다</div>
+            <p style="color:var(--color-text-secondary);max-width:400px;margin-bottom:var(--space-4);">채팅에서 작업 후 "레시피로 저장해줘"라고 말해보세요.</p>
+            <a class="btn btn--primary" href="chat.html">💬 채팅으로 이동</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.case-switcher button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.case-switcher button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('case-' + btn.dataset.case).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

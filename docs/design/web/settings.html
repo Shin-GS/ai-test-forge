@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>설정 — AI Test Forge</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .settings-page {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-6);
+    }
+    .settings-page__inner {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .settings-section {
+      margin-bottom: var(--space-8);
+    }
+    .settings-section__title {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--space-4);
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row__label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+    }
+    .settings-row__desc {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-top: 2px;
+    }
+    .settings-row__value {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    /* 워크스페이스 매핑 테이블 */
+    .ws-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--font-size-sm);
+    }
+    .ws-table th {
+      text-align: left;
+      padding: var(--space-2) var(--space-3);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-tertiary);
+      font-size: var(--font-size-xs);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .ws-table td {
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .ws-select {
+      padding: var(--space-1) var(--space-3);
+      background: var(--color-bg-tertiary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text-primary);
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family);
+    }
+    /* 토글 */
+    .toggle {
+      width: 40px;
+      height: 22px;
+      background: var(--color-bg-tertiary);
+      border-radius: var(--radius-full);
+      position: relative;
+      cursor: pointer;
+      border: 1px solid var(--color-border);
+      transition: all var(--transition-fast);
+    }
+    .toggle.active {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+    }
+    .toggle::after {
+      content: '';
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: var(--radius-full);
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: all var(--transition-fast);
+    }
+    .toggle.active::after {
+      left: 20px;
+    }
+    /* 숫자 입력 */
+    .num-input {
+      width: 80px;
+      padding: var(--space-1) var(--space-2);
+      text-align: center;
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family);
+      color: var(--color-text-primary);
+      background: var(--color-bg-tertiary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <nav class="case-switcher">
+    <button class="active" data-case="1">워크스페이스</button>
+    <button data-case="2">AI 설정</button>
+    <button data-case="3">Agent Loop</button>
+    <button data-case="4">계정</button>
+  </nav>
+
+  <!-- ==================== Case 1: 워크스페이스 관리 ==================== -->
+  <div class="screen active" id="case-1">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item active" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="settings-page">
+          <div class="settings-page__inner">
+            <div class="settings-section">
+              <h2 class="settings-section__title">🌐 워크스페이스 관리</h2>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);">
+                <div>
+                  <span style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">현재:</span>
+                  <strong style="margin-left:var(--space-2);">로그인 리팩토링</strong>
+                </div>
+                <div style="display:flex;gap:var(--space-2);">
+                  <button class="btn btn--secondary btn--sm">+ 새 워크스페이스</button>
+                  <button class="btn btn--ghost btn--sm" style="color:var(--color-error);">삭제</button>
+                </div>
+              </div>
+              <table class="ws-table">
+                <thead>
+                  <tr>
+                    <th>서브도메인</th>
+                    <th>환경</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>user-service</td>
+                    <td>
+                      <select class="ws-select">
+                        <option>dev</option>
+                        <option selected>feature-login</option>
+                        <option>feature-pay</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>auth-service</td>
+                    <td>
+                      <select class="ws-select">
+                        <option>dev</option>
+                        <option selected>feature-login</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>recruit-service</td>
+                    <td>
+                      <select class="ws-select">
+                        <option selected>dev</option>
+                        <option>feature-login</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>payment-service</td>
+                    <td>
+                      <select class="ws-select">
+                        <option selected>dev</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>resume-service</td>
+                    <td>
+                      <select class="ws-select">
+                        <option selected>dev</option>
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Case 2: AI 설정 ==================== -->
+  <div class="screen" id="case-2">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item active" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="settings-page">
+          <div class="settings-page__inner">
+            <div class="settings-section">
+              <h2 class="settings-section__title">🤖 AI 설정</h2>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">Provider</div>
+                  <div class="settings-row__desc">AI 모델 제공자</div>
+                </div>
+                <div class="settings-row__value">
+                  <select class="ws-select">
+                    <option selected>OpenAI</option>
+                    <option>Claude</option>
+                    <option>Mock (테스트용)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">Model</div>
+                  <div class="settings-row__desc">사용할 모델</div>
+                </div>
+                <div class="settings-row__value">
+                  <select class="ws-select">
+                    <option selected>gpt-4o</option>
+                    <option>gpt-4o-mini</option>
+                    <option>gpt-3.5-turbo</option>
+                  </select>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">"다음 액션" 힌트</div>
+                  <div class="settings-row__desc">작업 완료 후 다음으로 할 수 있는 것을 제안 (AI 토큰 추가 사용)</div>
+                </div>
+                <div class="settings-row__value">
+                  <div class="toggle"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Case 3: Agent Loop ==================== -->
+  <div class="screen" id="case-3">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item active" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="settings-page">
+          <div class="settings-page__inner">
+            <div class="settings-section">
+              <h2 class="settings-section__title">🔄 Agent Loop 설정</h2>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">최대 반복 횟수</div>
+                  <div class="settings-row__desc">AI가 한 번의 요청에서 최대 몇 회까지 반복할지</div>
+                </div>
+                <div class="settings-row__value">
+                  <input class="num-input" type="number" value="20" />
+                  <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">회</span>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">턴당 Tool Call</div>
+                  <div class="settings-row__desc">한 번의 AI 응답에서 최대 API 호출 수</div>
+                </div>
+                <div class="settings-row__value">
+                  <input class="num-input" type="number" value="5" />
+                  <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">개</span>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">타임아웃</div>
+                  <div class="settings-row__desc">전체 Agent Loop의 최대 실행 시간</div>
+                </div>
+                <div class="settings-row__value">
+                  <input class="num-input" type="number" value="120" />
+                  <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">초</span>
+                </div>
+              </div>
+              <div style="margin-top:var(--space-4);">
+                <button class="btn btn--primary btn--sm">저장</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Case 4: 계정 ==================== -->
+  <div class="screen" id="case-4">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item active" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="settings-page">
+          <div class="settings-page__inner">
+            <div class="settings-section">
+              <h2 class="settings-section__title">👤 계정</h2>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">이메일</div>
+                </div>
+                <div class="settings-row__value">
+                  <span style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">ks@company.com</span>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">비밀번호</div>
+                </div>
+                <div class="settings-row__value">
+                  <button class="btn btn--secondary btn--sm">비밀번호 변경</button>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">2단계 인증 (OTP)</div>
+                  <div class="settings-row__desc">로그인 시 추가 인증 코드 요구</div>
+                </div>
+                <div class="settings-row__value">
+                  <div class="toggle active"></div>
+                </div>
+              </div>
+              <div style="margin-top:var(--space-8);padding-top:var(--space-4);border-top:1px solid var(--color-border);">
+                <button class="btn btn--ghost" style="color:var(--color-error);">로그아웃</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.case-switcher button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.case-switcher button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('case-' + btn.dataset.case).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>서브도메인 — AI Test Forge</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .subdomain-page { flex:1; overflow-y:auto; padding:var(--space-6); }
+    .subdomain-page__inner { max-width:900px; margin:0 auto; }
+    .filter-bar { display:flex; gap:var(--space-3); margin-bottom:var(--space-4); align-items:center; }
+    .filter-bar .input { max-width:300px; }
+    .subdomain-list { display:flex; flex-direction:column; gap:var(--space-3); }
+    .subdomain-card { background:var(--color-bg-secondary); border:1px solid var(--color-border); border-radius:var(--radius-lg); overflow:hidden; }
+    .subdomain-card__header { display:flex; align-items:center; justify-content:space-between; padding:var(--space-4); cursor:pointer; }
+    .subdomain-card__header:hover { background:var(--color-bg-hover); }
+    .subdomain-card__name { font-weight:var(--font-weight-semibold); display:flex; align-items:center; gap:var(--space-2); }
+    .subdomain-card__meta { display:flex; align-items:center; gap:var(--space-3); font-size:var(--font-size-sm); color:var(--color-text-secondary); }
+    .subdomain-card__detail { padding:0 var(--space-4) var(--space-4); border-top:1px solid var(--color-border); }
+    .subdomain-card__desc { font-size:var(--font-size-sm); color:var(--color-text-secondary); margin-bottom:var(--space-3); padding-top:var(--space-3); }
+    .env-row { display:flex; align-items:center; justify-content:space-between; padding:var(--space-2) var(--space-3); background:var(--color-bg-tertiary); border-radius:var(--radius-md); margin-bottom:var(--space-2); font-size:var(--font-size-sm); cursor:pointer; }
+    .env-row:hover { background:var(--color-bg-hover); }
+    .env-row__left { display:flex; align-items:center; gap:var(--space-2); }
+    .env-row__right { color:var(--color-text-tertiary); font-size:var(--font-size-xs); }
+    .auth-row { display:flex; gap:var(--space-3); margin-top:var(--space-3); font-size:var(--font-size-sm); }
+    .auth-item { display:flex; align-items:center; gap:var(--space-1); }
+    .detail-header { display:flex; align-items:center; gap:var(--space-3); margin-bottom:var(--space-4); }
+    .detail-info { display:flex; gap:var(--space-4); margin-bottom:var(--space-4); font-size:var(--font-size-sm); color:var(--color-text-secondary); flex-wrap:wrap; }
+    .api-group { margin-bottom:var(--space-4); }
+    .api-group__title { display:flex; align-items:center; gap:var(--space-2); font-size:var(--font-size-sm); font-weight:var(--font-weight-semibold); margin-bottom:var(--space-2); color:var(--color-text-secondary); }
+    .api-item { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-2) var(--space-3); font-size:var(--font-size-sm); border-radius:var(--radius-sm); }
+    .api-item:hover { background:var(--color-bg-hover); }
+    .api-method { font-family:var(--font-mono); font-size:var(--font-size-xs); font-weight:var(--font-weight-semibold); width:50px; }
+    .api-method--get { color:var(--color-success); }
+    .api-method--post { color:var(--color-info); }
+    .api-method--put { color:var(--color-warning); }
+    .api-method--delete { color:var(--color-error); }
+    .api-path { font-family:var(--font-mono); font-size:var(--font-size-xs); }
+    .api-summary { color:var(--color-text-tertiary); font-size:var(--font-size-xs); margin-left:auto; }
+    .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:var(--space-12); text-align:center; }
+    .empty-state__icon { font-size:3rem; margin-bottom:var(--space-4); }
+    .empty-state__title { font-size:var(--font-size-lg); font-weight:var(--font-weight-semibold); margin-bottom:var(--space-2); }
+    .warning-banner { display:flex; align-items:center; justify-content:space-between; padding:var(--space-3) var(--space-4); background:var(--color-warning-subtle); border:1px solid rgba(245,158,11,0.3); border-radius:var(--radius-md); margin-bottom:var(--space-4); font-size:var(--font-size-sm); }
+  </style>
+</head>
+<body>
+  <nav class="case-switcher">
+    <button class="active" data-case="1">목록 (정상)</button>
+    <button data-case="2">상세 (API 목록)</button>
+    <button data-case="3">빈 상태</button>
+    <button data-case="4">STALE 경고</button>
+  </nav>
+
+  <!-- Case 1: 목록 -->
+  <div class="screen active" id="case-1">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item active" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="subdomain-page">
+          <div class="subdomain-page__inner">
+            <div class="filter-bar">
+              <input class="input" placeholder="🔍 서버 검색..." />
+              <button class="btn btn--secondary btn--sm">환경: 전체 ▾</button>
+              <button class="btn btn--secondary btn--sm">상태: 전체 ▾</button>
+            </div>
+            <div class="subdomain-list">
+              <!-- 접힌 상태 -->
+              <div class="subdomain-card">
+                <div class="subdomain-card__header">
+                  <div class="subdomain-card__name">📡 user-service</div>
+                  <div class="subdomain-card__meta">
+                    <span class="badge badge--success">✅ ACTIVE</span>
+                    <span>2개 환경</span><span>API 47개</span><span>▼</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 펼친 상태 (라디오 선택) -->
+              <div class="subdomain-card">
+                <div class="subdomain-card__header">
+                  <div class="subdomain-card__name">📡 recruit-service</div>
+                  <div class="subdomain-card__meta">
+                    <span class="badge badge--success">✅ ACTIVE</span>
+                    <span>2개 환경</span><span>API 31개</span><span>▲</span>
+                  </div>
+                </div>
+                <div class="subdomain-card__detail">
+                  <div class="subdomain-card__desc">채용 공고, 입사지원, 면접 관리</div>
+                  <div class="env-row">
+                    <div class="env-row__left">
+                      <span style="color:var(--color-accent);">◉</span> dev
+                    </div>
+                    <div class="env-row__right">API 31개 · 1분 전 <span class="badge badge--info" style="margin-left:4px;font-size:10px;">선택됨</span></div>
+                  </div>
+                  <div class="env-row">
+                    <div class="env-row__left">
+                      <span style="color:var(--color-text-tertiary);">○</span> feature-login
+                    </div>
+                    <div class="env-row__right">API 31개 · 5분 전</div>
+                  </div>
+                  <div class="auth-row">
+                    <div class="auth-item">🔓 개인회원 (로그인됨)</div>
+                    <div class="auth-item">🔒 어드민 <a href="#" style="color:var(--color-accent);font-size:var(--font-size-xs);margin-left:4px;">로그인 →</a></div>
+                  </div>
+                </div>
+              </div>
+              <!-- payment -->
+              <div class="subdomain-card">
+                <div class="subdomain-card__header">
+                  <div class="subdomain-card__name">📡 payment-service</div>
+                  <div class="subdomain-card__meta">
+                    <span class="badge badge--success">✅ ACTIVE</span>
+                    <span>1개 환경</span><span>API 28개</span><span>▼</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 2: 상세 -->
+  <div class="screen" id="case-2">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item active" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="subdomain-page">
+          <div class="subdomain-page__inner">
+            <div class="detail-header">
+              <button style="font-size:var(--font-size-sm);color:var(--color-accent);border:none;background:none;cursor:pointer;font-family:var(--font-family);">← 목록으로</button>
+              <h2 style="font-size:var(--font-size-lg);font-weight:var(--font-weight-semibold);">📡 user-service <span style="color:var(--color-text-secondary);font-weight:normal;">(feature-login)</span></h2>
+            </div>
+            <div class="detail-info">
+              <span class="badge badge--success">✅ ACTIVE</span>
+              <span>API 49개</span>
+              <span>마지막 갱신: 5분 전</span>
+              <span style="font-family:var(--font-mono);font-size:var(--font-size-xs);">http://user.feature-login.svc:8080</span>
+            </div>
+            <div class="card" style="margin-bottom:var(--space-4);padding:var(--space-3);">
+              <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">회원 가입, 로그인, 프로필 관리, 인증 토큰 발급</div>
+            </div>
+            <input class="input" placeholder="🔍 API 검색..." style="margin-bottom:var(--space-4);max-width:400px;" />
+            <div class="api-group">
+              <div class="api-group__title">📁 auth (3개)</div>
+              <div class="api-item"><span class="api-method api-method--post">POST</span><span class="api-path">/api/auth/login</span><span class="api-summary">로그인</span></div>
+              <div class="api-item"><span class="api-method api-method--post">POST</span><span class="api-path">/api/auth/register</span><span class="api-summary">회원가입</span></div>
+              <div class="api-item"><span class="api-method api-method--post">POST</span><span class="api-path">/api/auth/refresh</span><span class="api-summary">토큰 갱신</span></div>
+            </div>
+            <div class="api-group">
+              <div class="api-group__title">📁 members (5개)</div>
+              <div class="api-item"><span class="api-method api-method--get">GET</span><span class="api-path">/api/members</span><span class="api-summary">회원 목록</span></div>
+              <div class="api-item"><span class="api-method api-method--post">POST</span><span class="api-path">/api/members</span><span class="api-summary">회원 생성</span></div>
+              <div class="api-item"><span class="api-method api-method--get">GET</span><span class="api-path">/api/members/{id}</span><span class="api-summary">회원 상세</span></div>
+              <div class="api-item"><span class="api-method api-method--put">PUT</span><span class="api-path">/api/members/{id}</span><span class="api-summary">회원 수정</span></div>
+              <div class="api-item"><span class="api-method api-method--delete">DELETE</span><span class="api-path">/api/members/{id}</span><span class="api-summary">회원 삭제</span></div>
+            </div>
+            <button class="btn btn--primary" style="margin-top:var(--space-4);">💬 채팅에서 이 서버 사용하기 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 3: 빈 상태 -->
+  <div class="screen" id="case-3">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item active" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="subdomain-page">
+          <div class="empty-state">
+            <div class="empty-state__icon">📡</div>
+            <div class="empty-state__title">등록된 서브도메인이 없습니다</div>
+            <p style="color:var(--color-text-secondary);max-width:400px;margin-bottom:var(--space-4);">서브도메인 서버에 클라이언트 라이브러리를 추가하면 자동으로 등록됩니다.</p>
+            <button class="btn btn--primary">연동 가이드 보기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 4: STALE 경고 -->
+  <div class="screen" id="case-4">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 dev ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item active" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="subdomain-page">
+          <div class="subdomain-page__inner">
+            <div class="warning-banner">
+              <span>⚠️ 2개 서버의 연결이 불안정합니다</span>
+              <button class="btn btn--ghost btn--sm">✕</button>
+            </div>
+            <div class="filter-bar">
+              <input class="input" placeholder="🔍 서버 검색..." />
+              <button class="btn btn--secondary btn--sm">환경: 전체 ▾</button>
+              <button class="btn btn--secondary btn--sm">상태: 전체 ▾</button>
+            </div>
+            <div class="subdomain-list">
+              <div class="subdomain-card">
+                <div class="subdomain-card__header">
+                  <div class="subdomain-card__name">📡 user-service</div>
+                  <div class="subdomain-card__meta">
+                    <span class="badge badge--success">✅ ACTIVE</span>
+                    <span>1개 환경</span><span>API 47개</span><span>▼</span>
+                  </div>
+                </div>
+              </div>
+              <div class="subdomain-card" style="border-color:rgba(245,158,11,0.3);">
+                <div class="subdomain-card__header">
+                  <div class="subdomain-card__name">📡 payment-service</div>
+                  <div class="subdomain-card__meta">
+                    <span class="badge badge--warning">⚠️ STALE</span>
+                    <span>1개 환경</span><span>API 28개</span>
+                    <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">10분 전</span>
+                    <span>▼</span>
+                  </div>
+                </div>
+              </div>
+              <div class="subdomain-card" style="border-color:rgba(245,158,11,0.3);">
+                <div class="subdomain-card__header">
+                  <div class="subdomain-card__name">📡 notification-service</div>
+                  <div class="subdomain-card__meta">
+                    <span class="badge badge--warning">⚠️ STALE</span>
+                    <span>1개 환경</span><span>API 12개</span>
+                    <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">25분 전</span>
+                    <span>▼</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.case-switcher button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.case-switcher button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('case-' + btn.dataset.case).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

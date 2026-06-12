@@ -16,18 +16,23 @@ docs/design/
 ├── shared/              # 디자인 시스템
 │   ├── tokens.css       # 디자인 토큰 (컬러, 타이포, 간격)
 │   ├── components.css   # 공통 컴포넌트 스타일
-│   └── base.css         # 리셋, 레이아웃 기본
+│   ├── base.css         # 리셋, 레이아웃 기본
+│   └── system.html      # 컴포넌트 카탈로그 (브라우저에서 확인)
 ├── web/                 # 채팅 UI 화면별 HTML + .cases.md
 └── assets/              # 아이콘, 이미지
 ```
 
 ## 화면 목록
 
-### 채팅 UI
+### Web (Chat UI)
 
 | 화면 | 파일 | 케이스 | 상태 |
 |------|------|--------|------|
-| (아직 없음) | | | |
+| 로그인 | `web/login.html` | `web/login.cases.md` (3개: 기본, 실패, OTP) | DONE |
+| 채팅 | `web/chat.html` | `web/chat.cases.md` (6개: 첫접속, 진행중, 완료, 인증필요, 에러, 레시피) | DONE |
+| 서브도메인 | `web/subdomain.html` | `web/subdomain.cases.md` (4개: 목록, 상세, 빈상태, STALE) | DONE |
+| 레시피 | `web/recipe.html` | `web/recipe.cases.md` (3개: 목록, 상세, 빈상태) | DONE |
+| 설정 | `web/settings.html` | `web/settings.cases.md` (4개: 워크스페이스, AI, AgentLoop, 계정) | DONE |
 
 ## 상태 범례
 

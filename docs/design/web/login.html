@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 — AI Test Forge</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .login-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--color-bg-primary);
+    }
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      padding: var(--space-8);
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+    }
+    .login-card__logo {
+      text-align: center;
+      margin-bottom: var(--space-6);
+    }
+    .login-card__logo h1 {
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-bold);
+      margin-top: var(--space-2);
+    }
+    .login-card__logo p {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      margin-top: var(--space-1);
+    }
+    .form-group {
+      margin-bottom: var(--space-4);
+    }
+    .form-group label {
+      display: block;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-1);
+    }
+    .login-error {
+      padding: var(--space-3);
+      background: var(--color-error-subtle);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      color: var(--color-error);
+      margin-bottom: var(--space-4);
+    }
+    .otp-input {
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xl);
+      letter-spacing: 0.5em;
+    }
+    .otp-hint {
+      text-align: center;
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-top: var(--space-2);
+    }
+  </style>
+</head>
+<body>
+  <nav class="case-switcher">
+    <button class="active" data-case="1">기본 로그인</button>
+    <button data-case="2">로그인 실패</button>
+    <button data-case="3">OTP 입력</button>
+  </nav>
+
+  <!-- ==================== Case 1: 기본 로그인 ==================== -->
+  <div class="screen active" id="case-1">
+    <div class="login-page">
+      <div class="login-card">
+        <div class="login-card__logo">
+          <div style="font-size:2rem;">🔨</div>
+          <h1>AI Test Forge</h1>
+          <p>테스트 데이터 생성 플랫폼</p>
+        </div>
+        <div class="form-group">
+          <label>이메일</label>
+          <input class="input" type="email" placeholder="name@company.com" />
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input class="input" type="password" placeholder="비밀번호 입력" />
+        </div>
+        <button class="btn btn--primary" style="width:100%;padding:var(--space-3);">로그인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Case 2: 로그인 실패 ==================== -->
+  <div class="screen" id="case-2">
+    <div class="login-page">
+      <div class="login-card">
+        <div class="login-card__logo">
+          <div style="font-size:2rem;">🔨</div>
+          <h1>AI Test Forge</h1>
+          <p>테스트 데이터 생성 플랫폼</p>
+        </div>
+        <div class="login-error">
+          이메일 또는 비밀번호가 올바르지 않습니다.
+        </div>
+        <div class="form-group">
+          <label>이메일</label>
+          <input class="input" type="email" value="test@company.com" />
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input class="input" type="password" placeholder="비밀번호 입력" />
+        </div>
+        <button class="btn btn--primary" style="width:100%;padding:var(--space-3);">로그인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Case 3: OTP 입력 ==================== -->
+  <div class="screen" id="case-3">
+    <div class="login-page">
+      <div class="login-card">
+        <div class="login-card__logo">
+          <div style="font-size:2rem;">🔐</div>
+          <h1>2단계 인증</h1>
+          <p>인증 앱에서 코드를 확인하세요</p>
+        </div>
+        <div class="form-group">
+          <label>인증 코드</label>
+          <input class="input otp-input" type="text" maxlength="6" placeholder="000000" />
+          <div class="otp-hint">Google Authenticator 또는 인증 앱의 6자리 코드</div>
+        </div>
+        <button class="btn btn--primary" style="width:100%;padding:var(--space-3);">인증</button>
+        <button class="btn btn--ghost" style="width:100%;margin-top:var(--space-2);">← 이전으로</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.case-switcher button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.case-switcher button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('case-' + btn.dataset.case).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
