@@ -64,7 +64,7 @@ AI 기반 테스트 데이터 생성 플랫폼.
 
 | 구분 | 기술 |
 |------|------|
-| 메인 서버 | Java 21+ + Spring Boot 3.x + Gradle (Kotlin DSL) |
+| 메인 서버 | Java 25 + Spring Boot 4.0.x + Gradle (Kotlin DSL) |
 | 웹 UI | React 19 + Vite + TypeScript + Tailwind CSS 4 |
 | 클라이언트 라이브러리 | Java (Spring Boot Starter) |
 | 데이터베이스 | MySQL 8.x |

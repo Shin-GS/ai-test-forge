@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "outDir": "./node_modules/.tmp/app"
+  },
+  "include": ["src"]
+}

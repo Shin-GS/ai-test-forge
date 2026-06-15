@@ -109,7 +109,7 @@ AI Test Forge 도입 후: 150시간 × 90% 절감 = 135시간/월 절약
 
 ### 사전 요구사항
 
-- Java 21+ / Node.js 20+ & pnpm / MySQL 8.x
+- Java 25+ / Node.js 22+ & pnpm / MySQL 8.x
 - (선택) OpenAI API Key 또는 Claude API Key
 
 ### 설치 & 실행
@@ -218,10 +218,10 @@ AI:     ✅ 30초 만에 완료 (AI 호출 없이 직접 실행 — 비용 0)
 
 | 구성요소 | 기술 |
 |---------|------|
-| 메인 서버 | Java 21+ / Spring Boot 3.x / Gradle |
-| 웹 UI | React 19 / TypeScript / Vite / Tailwind CSS 4 |
+| 메인 서버 | Java 25 / Spring Boot 4.0.x / Gradle |
+| 웹 UI | React 19 / TypeScript / Vite 6 / Tailwind CSS 4 |
 | 실시간 | SSE (서버→FE) + REST (FE→서버) |
-| 클라이언트 라이브러리 | Spring Boot Starter (Java) |
+| 클라이언트 라이브러리 | Spring Boot Starter (Java 17+) |
 | DB | MySQL 8.x |
 | AI | OpenAI, Claude (인터페이스 기반 교체) |
 

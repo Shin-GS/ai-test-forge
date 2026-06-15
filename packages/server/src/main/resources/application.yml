@@ -1,0 +1,28 @@
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+
+spring:
+  profiles:
+    active: ${APP_PROFILE:local}
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:ai_test_forge}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+ai:
+  provider: ${AI_PROVIDER:mock}
