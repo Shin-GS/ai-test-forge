@@ -86,6 +86,7 @@ inclusion: always
 | MockAiService | `local` | 실제 호출 없음, 시뮬레이션 응답 |
 | OpenAiService | `!local` + `ai.provider=openai` | OpenAI API 호출 |
 | ClaudeAiService | `!local` + `ai.provider=claude` | Claude API 호출 |
+| OpenRouterService | `!local` + `ai.provider=openrouter` | OpenRouter API 호출 (OpenAI 호환, 다양한 모델 접근) |
 
 ### 설정 파일 구조
 - `application.yml` — 공통 설정
