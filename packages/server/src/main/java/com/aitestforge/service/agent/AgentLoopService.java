@@ -2,13 +2,17 @@ package com.aitestforge.service.agent;
 
 import com.aitestforge.domain.chat.ChatMessage;
 import com.aitestforge.domain.chat.MessageRole;
+import com.aitestforge.domain.spec.SpecStatus;
+import com.aitestforge.domain.spec.SubdomainSpec;
 import com.aitestforge.dto.chat.ToolResultRequest;
 import com.aitestforge.infra.ai.AiService;
 import com.aitestforge.infra.ai.dto.AiChatResponse;
 import com.aitestforge.infra.ai.dto.ToolCall;
 import com.aitestforge.infra.ai.dto.ToolDefinition;
 import com.aitestforge.repository.ChatMessageRepository;
+import com.aitestforge.repository.SubdomainSpecRepository;
 import com.aitestforge.service.chat.ChatService;
+import com.aitestforge.service.spec.SpecToolConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +41,8 @@ public class AgentLoopService {
     private final AiService aiService;
     private final ChatService chatService;
     private final ChatMessageRepository messageRepository;
+    private final SubdomainSpecRepository specRepository;
+    private final SpecToolConverter specToolConverter;
 
     // 세션별 SSE emitter 관리
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -85,8 +91,9 @@ public class AgentLoopService {
             // 현재 대화 히스토리 구성
             List<com.aitestforge.infra.ai.dto.ChatMessage> history = buildHistory(sessionId);
 
-            // TODO: 등록된 서브도메인 스펙에서 사용 가능한 tool 목록 구성
-            List<ToolDefinition> tools = List.of();
+            // 등록된 서브도메인 스펙에서 사용 가능한 tool 목록 구성
+            List<SubdomainSpec> activeSpecs = specRepository.findByStatus(SpecStatus.ACTIVE);
+            List<ToolDefinition> tools = specToolConverter.convertAll(activeSpecs);
 
             // AI 호출
             AiChatResponse response = aiService.chat(history, tools);
