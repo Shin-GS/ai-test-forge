@@ -1,18 +1,22 @@
 package com.aitestforge.service.agent;
 
 import com.aitestforge.domain.chat.ChatMessage;
+import com.aitestforge.domain.chat.ChatSession;
 import com.aitestforge.domain.chat.MessageRole;
 import com.aitestforge.domain.spec.SpecStatus;
 import com.aitestforge.domain.spec.SubdomainSpec;
 import com.aitestforge.dto.chat.ToolResultRequest;
+import com.aitestforge.dto.workspace.WorkspaceMappingDto;
 import com.aitestforge.infra.ai.AiService;
 import com.aitestforge.infra.ai.dto.AiChatResponse;
 import com.aitestforge.infra.ai.dto.ToolCall;
 import com.aitestforge.infra.ai.dto.ToolDefinition;
 import com.aitestforge.repository.ChatMessageRepository;
+import com.aitestforge.repository.ChatSessionRepository;
 import com.aitestforge.repository.SubdomainSpecRepository;
 import com.aitestforge.service.chat.ChatService;
 import com.aitestforge.service.spec.SpecToolConverter;
+import com.aitestforge.service.workspace.WorkspaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,7 +25,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Agent Loop 오케스트레이션.
@@ -41,8 +47,10 @@ public class AgentLoopService {
     private final AiService aiService;
     private final ChatService chatService;
     private final ChatMessageRepository messageRepository;
+    private final ChatSessionRepository sessionRepository;
     private final SubdomainSpecRepository specRepository;
     private final SpecToolConverter specToolConverter;
+    private final WorkspaceService workspaceService;
 
     // 세션별 SSE emitter 관리
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -91,9 +99,8 @@ public class AgentLoopService {
             // 현재 대화 히스토리 구성
             List<com.aitestforge.infra.ai.dto.ChatMessage> history = buildHistory(sessionId);
 
-            // 등록된 서브도메인 스펙에서 사용 가능한 tool 목록 구성
-            List<SubdomainSpec> activeSpecs = specRepository.findByStatus(SpecStatus.ACTIVE);
-            List<ToolDefinition> tools = specToolConverter.convertAll(activeSpecs);
+            // 워크스페이스 기반 tool 목록 필터링
+            List<ToolDefinition> tools = buildToolsForSession(sessionId);
 
             // AI 호출
             AiChatResponse response = aiService.chat(history, tools);
@@ -133,6 +140,38 @@ public class AgentLoopService {
             ));
         }
         // FE가 tool-result를 POST하면 handleToolResult에서 다음 턴 진행
+    }
+
+    /**
+     * 세션의 사용자 워크스페이스에 매핑된 서브도메인 스펙만 tool로 변환한다.
+     * 워크스페이스 매핑이 없으면 모든 ACTIVE 스펙을 사용 (fallback).
+     */
+    private List<ToolDefinition> buildToolsForSession(Long sessionId) {
+        // 세션에서 userId 가져오기
+        ChatSession session = sessionRepository.findById(sessionId).orElse(null);
+        if (session == null) {
+            return List.of();
+        }
+
+        Long userId = session.getUserId();
+        List<WorkspaceMappingDto> mappings = workspaceService.getDefaultMappings(userId);
+
+        List<SubdomainSpec> activeSpecs = specRepository.findByStatus(SpecStatus.ACTIVE);
+
+        // 워크스페이스 매핑이 있으면 필터링
+        if (!mappings.isEmpty()) {
+            Set<String> allowedKeys = mappings.stream()
+                    .map(m -> m.subdomainName() + ":" + m.environment())
+                    .collect(Collectors.toSet());
+
+            activeSpecs = activeSpecs.stream()
+                    .filter(spec -> allowedKeys.contains(spec.getName() + ":" + spec.getEnvironment()))
+                    .toList();
+
+            log.debug("Workspace filter applied: {} specs (from {} total)", activeSpecs.size(), allowedKeys.size());
+        }
+
+        return specToolConverter.convertAll(activeSpecs);
     }
 
     private List<com.aitestforge.infra.ai.dto.ChatMessage> buildHistory(Long sessionId) {
