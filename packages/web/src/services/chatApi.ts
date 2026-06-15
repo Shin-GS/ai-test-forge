@@ -39,7 +39,7 @@ export async function getSessions(): Promise<SessionResponse[]> {
 export async function sendMessage(
   sessionId: number,
   message: string
-): Promise<MessageResponse> {
+): Promise<void> {
   const res = await fetch(`${API_BASE}/chat/${sessionId}/messages`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -49,8 +49,6 @@ export async function sendMessage(
   if (!res.ok) {
     throw new Error('메시지 전송에 실패했습니다.')
   }
-
-  return res.json()
 }
 
 export async function getMessages(

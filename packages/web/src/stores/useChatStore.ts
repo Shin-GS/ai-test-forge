@@ -76,11 +76,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
         messages: [],
       })
 
-      // 메시지 전송
-      const userMsg = await sendMessage(session.id, message)
+      // 사용자 메시지를 로컬에 추가
+      const userMsg: MessageResponse = {
+        id: Date.now(),
+        sessionId: session.id,
+        role: 'USER',
+        content: message,
+        createdAt: new Date().toISOString(),
+      }
       set((state) => ({
         messages: [...state.messages, userMsg],
       }))
+
+      // 메시지 전송 (BE는 202 빈 body 반환)
+      await sendMessage(session.id, message)
 
       // SSE 연결
       get().disconnectStream()
@@ -111,10 +120,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     set({ isLoading: true, toolCalls: [] })
     try {
-      const userMsg = await sendMessage(activeSessionId, message)
+      // 사용자 메시지를 로컬에 추가
+      const userMsg: MessageResponse = {
+        id: Date.now(),
+        sessionId: activeSessionId,
+        role: 'USER',
+        content: message,
+        createdAt: new Date().toISOString(),
+      }
       set((state) => ({
         messages: [...state.messages, userMsg],
       }))
+
+      // 메시지 전송 (BE는 202 빈 body 반환)
+      await sendMessage(activeSessionId, message)
 
       // SSE 연결
       get().disconnectStream()
