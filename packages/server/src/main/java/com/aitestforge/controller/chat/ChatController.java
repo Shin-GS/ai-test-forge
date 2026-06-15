@@ -1,5 +1,6 @@
 package com.aitestforge.controller.chat;
 
+import com.aitestforge.domain.auth.User;
 import com.aitestforge.dto.chat.*;
 import com.aitestforge.service.agent.AgentLoopService;
 import com.aitestforge.service.chat.ChatService;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -26,17 +28,19 @@ public class ChatController {
 
     @Operation(summary = "채팅 세션 생성", description = "새로운 채팅 세션을 생성합니다.")
     @PostMapping("/sessions")
-    public ResponseEntity<SessionResponse> createSession(@RequestBody(required = false) CreateSessionRequest request) {
+    public ResponseEntity<SessionResponse> createSession(
+            @RequestBody(required = false) CreateSessionRequest request,
+            @AuthenticationPrincipal User user) {
         if (request == null) {
             request = new CreateSessionRequest(null);
         }
-        return ResponseEntity.ok(chatService.createSession(request));
+        return ResponseEntity.ok(chatService.createSession(request, user.getId()));
     }
 
-    @Operation(summary = "채팅 세션 목록 조회", description = "모든 채팅 세션을 최신 순으로 조회합니다.")
+    @Operation(summary = "채팅 세션 목록 조회", description = "현재 사용자의 채팅 세션을 최신 순으로 조회합니다.")
     @GetMapping("/sessions")
-    public ResponseEntity<List<SessionResponse>> getAllSessions() {
-        return ResponseEntity.ok(chatService.getAllSessions());
+    public ResponseEntity<List<SessionResponse>> getAllSessions(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(chatService.getAllSessions(user.getId()));
     }
 
     @Operation(summary = "채팅 세션 상세 조회", description = "특정 채팅 세션의 정보를 조회합니다.")

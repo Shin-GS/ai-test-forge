@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> {
 
+    List<ChatSession> findByUserIdOrderByUpdatedAtDesc(Long userId);
+
     List<ChatSession> findByStatusOrderByUpdatedAtDesc(SessionStatus status);
 
     List<ChatSession> findAllByOrderByUpdatedAtDesc();

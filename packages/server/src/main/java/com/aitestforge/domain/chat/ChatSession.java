@@ -23,6 +23,9 @@ public class ChatSession {
     @Column(name = "TITLE")
     private String title;
 
+    @Column(name = "USER_ID", nullable = false)
+    private Long userId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "STATUS", nullable = false)
     @Builder.Default

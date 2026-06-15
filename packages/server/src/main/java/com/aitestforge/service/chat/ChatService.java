@@ -27,17 +27,18 @@ public class ChatService {
     private final ChatMessageRepository messageRepository;
 
     @Transactional
-    public SessionResponse createSession(CreateSessionRequest request) {
+    public SessionResponse createSession(CreateSessionRequest request, Long userId) {
         ChatSession session = ChatSession.builder()
                 .title(request.title())
+                .userId(userId)
                 .build();
         sessionRepository.save(session);
-        log.info("Chat session created: {}", session.getId());
+        log.info("Chat session created: {} for user {}", session.getId(), userId);
         return SessionResponse.from(session);
     }
 
-    public List<SessionResponse> getAllSessions() {
-        return sessionRepository.findAllByOrderByUpdatedAtDesc().stream()
+    public List<SessionResponse> getAllSessions(Long userId) {
+        return sessionRepository.findByUserIdOrderByUpdatedAtDesc(userId).stream()
                 .map(SessionResponse::from)
                 .toList();
     }
