@@ -24,5 +24,9 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
+spec-registry:
+  stale-threshold: ${SPEC_STALE_THRESHOLD:5m}
+  auto-delete-threshold: ${SPEC_AUTO_DELETE_THRESHOLD:30m}
+
 ai:
   provider: ${AI_PROVIDER:mock}
