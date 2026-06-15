@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/useAuthStore'
+import AppLayout from '@/components/layout/AppLayout'
 import ChatPage from '@/pages/ChatPage'
 import SubdomainPage from '@/pages/SubdomainPage'
 import RecipePage from '@/pages/RecipePage'
@@ -39,37 +40,17 @@ function App() {
           }
         />
         <Route
-          path="/"
           element={
             <ProtectedRoute>
-              <ChatPage />
+              <AppLayout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/subdomains"
-          element={
-            <ProtectedRoute>
-              <SubdomainPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/recipes"
-          element={
-            <ProtectedRoute>
-              <RecipePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/" element={<ChatPage />} />
+          <Route path="/subdomains" element={<SubdomainPage />} />
+          <Route path="/recipes" element={<RecipePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
