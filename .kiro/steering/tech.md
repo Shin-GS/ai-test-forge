@@ -67,8 +67,10 @@ inclusion: always
 ### AI 연동
 - OpenAI API (Chat Completions with function calling)
 - Anthropic Claude API (Messages API with tool use)
+- OpenRouter API (OpenAI 호환, 다양한 모델 접근)
 - RestClient (Spring 7.x) 기반 HTTP 호출
 - Timeout: connectTimeout 5초, readTimeout 60초
+- Retry: exponential backoff (429/5xx → 최대 3회, 초기 대기 1초, 배율 2.0)
 - Virtual Threads 활성화 (spring.threads.virtual.enabled=true) — 별도 스레드 풀 관리 불필요
 
 ### Profile 전략 (3개)

@@ -132,12 +132,18 @@ while (!completed) {
 ```yaml
 agent-loop:
   max-concurrent: 10          # 전체 동시 Agent Loop 수
-  max-per-subdomain: 3        # 같은 서브도메인에 동시 요청 수
-  ai-rate-limit: 60/min       # AI API 호출 속도 제한 (provider rate limit 대응)
+  max-per-subdomain: 3        # 같은 서브도메인에 동시 요청 수 (향후 구현)
+  two-stage-threshold: 30     # 이 수 이상의 tool이면 2-Stage Strategy 적용
+
+ai:
+  retry:
+    max-attempts: 3           # AI API 재시도 횟수
+    initial-delay-ms: 1000    # 첫 대기 시간 (exponential backoff)
+    multiplier: 2.0           # 대기 시간 배율
 ```
 
-- 전체 제한 초과 시: "현재 대기 중입니다 (N명 앞)" 메시지 표시
-- 서브도메인 제한: 테스트 환경 서버 과부하 방지
+- 전체 제한 초과 시: 에러 이벤트로 "동시 실행 한도 초과" 메시지 전달 (E004)
+- 서브도메인 제한: 향후 구현 예정 (테스트 환경 서버 과부하 방지)
 - AI rate limit: provider의 rate limit에 맞춰 throttling (초과 시 대기 후 재시도)
 
 ## 4. 2-Stage Strategy (API 수가 많을 때)
