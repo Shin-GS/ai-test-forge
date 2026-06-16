@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore, handleUnauthorized } from '@/stores/useAuthStore'
 import type { SessionResponse, MessageResponse } from '@/types/chat'
 
 const API_BASE = '/api/v1'
@@ -11,12 +11,19 @@ function getAuthHeaders(): HeadersInit {
   }
 }
 
+function checkResponse(res: Response): void {
+  if (res.status === 401) {
+    handleUnauthorized(res.status)
+  }
+}
+
 export async function createSession(): Promise<SessionResponse> {
   const res = await fetch(`${API_BASE}/chat/sessions`, {
     method: 'POST',
     headers: getAuthHeaders(),
   })
 
+  checkResponse(res)
   if (!res.ok) {
     throw new Error('세션 생성에 실패했습니다.')
   }

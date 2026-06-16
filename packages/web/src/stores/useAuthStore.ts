@@ -36,6 +36,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
+    localStorage.removeItem('active_workspace_id')
     set({ isAuthenticated: false, user: null, token: null })
   },
 
@@ -49,3 +50,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }))
+
+/**
+ * API 응답이 401이면 자동 로그아웃.
+ * fetch wrapper에서 사용.
+ */
+export function handleUnauthorized(status: number): void {
+  if (status === 401) {
+    useAuthStore.getState().logout()
+    window.location.href = '/login'
+  }
+}
