@@ -10,9 +10,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -25,11 +29,16 @@ public class SpecService {
 
     private final SubdomainSpecRepository specRepository;
     private final ObjectMapper objectMapper;
+    private final SpecAsyncProcessor specAsyncProcessor;
+
+    @Value("${spec-registry.async-threshold:5242880}")
+    private long asyncThreshold;
 
     /**
      * 서브도메인 API 스펙 등록/갱신/heartbeat 겸용.
      * - specJson이 있으면: 등록 또는 전체 갱신
      * - specJson이 없고 specHash만 있으면: heartbeat (해시 일치 시 갱신 불필요)
+     * - specJson 크기가 asyncThreshold 이상이면 비동기 처리 (202 응답)
      */
     @Transactional
     public SpecRegisterResponse register(SpecRegisterRequest request) {
@@ -72,7 +81,25 @@ public class SpecService {
                     spec.getStatus(), "heartbeat accepted");
         }
 
-        // specJson이 있으면 전체 갱신
+        // 비동기 처리 대상인지 판단
+        if (isAsyncRequired(request.specJson())) {
+            spec.markRegistering();
+            log.info("Async spec update started: {} ({})", request.name(), request.environment());
+            final Long specId = spec.getId();
+            final String specJson = request.specJson();
+            final String baseUrl = request.baseUrl();
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    specAsyncProcessor.processSpecAsync(specId, specJson, baseUrl);
+                }
+            });
+            return new SpecRegisterResponse(
+                    spec.getId(), spec.getName(), spec.getEnvironment(),
+                    SpecStatus.REGISTERING, "async processing");
+        }
+
+        // specJson이 있으면 전체 갱신 (동기)
         String newHash = computeHash(request.specJson());
         spec.updateSpec(request.specJson(), newHash, request.baseUrl());
         log.info("Spec updated: {} ({})", request.name(), request.environment());
@@ -83,6 +110,35 @@ public class SpecService {
     }
 
     private SpecRegisterResponse handleNew(SpecRegisterRequest request) {
+        // 비동기 처리 대상인지 판단
+        if (request.specJson() != null && isAsyncRequired(request.specJson())) {
+            SubdomainSpec spec = SubdomainSpec.builder()
+                    .name(request.name())
+                    .environment(request.environment())
+                    .baseUrl(request.baseUrl())
+                    .specJson(null)
+                    .specHash(null)
+                    .status(SpecStatus.REGISTERING)
+                    .build();
+
+            specRepository.save(spec);
+            log.info("Async spec registration started: {} ({})", request.name(), request.environment());
+            final Long specId = spec.getId();
+            final String specJson = request.specJson();
+            final String baseUrl = request.baseUrl();
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    specAsyncProcessor.processSpecAsync(specId, specJson, baseUrl);
+                }
+            });
+
+            return new SpecRegisterResponse(
+                    spec.getId(), spec.getName(), spec.getEnvironment(),
+                    spec.getStatus(), "async processing");
+        }
+
+        // 동기 처리
         String hash = request.specJson() != null ? computeHash(request.specJson()) : null;
 
         SubdomainSpec spec = SubdomainSpec.builder()
@@ -102,10 +158,17 @@ public class SpecService {
                 spec.getStatus(), "spec registered");
     }
 
+    /**
+     * specJson 크기가 asyncThreshold 이상인지 판단.
+     */
+    private boolean isAsyncRequired(String specJson) {
+        return specJson.getBytes(StandardCharsets.UTF_8).length >= asyncThreshold;
+    }
+
     private String computeHash(String content) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(content.getBytes());
+            byte[] digest = md.digest(content.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 not available", e);

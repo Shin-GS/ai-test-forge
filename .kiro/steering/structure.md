@@ -18,27 +18,30 @@ ai-test-forge/
 │   │       │   ├── controller/          # REST 컨트롤러
 │   │       │   │   ├── chat/            # 채팅 대화 엔드포인트
 │   │       │   │   ├── spec/            # API 스펙 관리 엔드포인트
-│   │       │   │   ├── auth/            # 서브도메인 인증 엔드포인트
-│   │       │   │   └── admin/           # 관리 엔드포인트
+│   │       │   │   ├── auth/            # 메인 서버 인증 엔드포인트
+│   │       │   │   ├── recipe/          # 레시피 관리 엔드포인트
+│   │       │   │   └── workspace/       # 워크스페이스 관리 엔드포인트
 │   │       │   ├── service/             # 비즈니스 로직
 │   │       │   │   ├── chat/            # 채팅 세션, 메시지 처리
 │   │       │   │   ├── agent/           # 에이전트 루프 오케스트레이션
-│   │       │   │   ├── spec/            # API 스펙 저장, 파싱
-│   │       │   │   ├── auth/            # 서브도메인 인증
+│   │       │   │   ├── spec/            # API 스펙 저장, 파싱, 비동기 처리
+│   │       │   │   ├── auth/            # 메인 서버 인증
 │   │       │   │   ├── recipe/          # 레시피 CRUD, 실행
-│   │       │   │   └── tool/            # 툴 실행 (실제 API 호출)
+│   │       │   │   └── workspace/       # 워크스페이스 관리
 │   │       │   ├── infra/              # 외부 시스템 추상화
 │   │       │   │   ├── ai/             # AI 서비스 인터페이스 + 구현체
 │   │       │   │   │   ├── AiService.java          # 인터페이스
 │   │       │   │   │   ├── OpenAiService.java      # OpenAI 구현체
 │   │       │   │   │   ├── ClaudeAiService.java    # Claude 구현체
+│   │       │   │   │   ├── OpenRouterService.java  # OpenRouter 구현체
 │   │       │   │   │   └── MockAiService.java      # 로컬 개발용 Mock
-│   │       │   │   └── http/            # 서브도메인 API 호출 HTTP 클라이언트
+│   │       │   │   └── auth/            # JWT 인증 필터 + 토큰 프로바이더
 │   │       │   ├── domain/             # JPA 엔티티
-│   │       │   │   ├── chat/           # ChatSession, ChatMessage
-│   │       │   │   ├── spec/           # SubdomainSpec, ApiEndpoint
-│   │       │   │   ├── auth/           # SubdomainAuth, AuthToken
-│   │       │   │   └── recipe/         # Recipe, RecipeStep
+│   │       │   │   ├── chat/           # ChatSession, ChatMessage, SessionStatus, MessageRole
+│   │       │   │   ├── spec/           # SubdomainSpec, SpecStatus
+│   │       │   │   ├── auth/           # User, UserRole
+│   │       │   │   ├── recipe/         # Recipe
+│   │       │   │   └── workspace/      # Workspace, WorkspaceMapping
 │   │       │   ├── repository/         # JPA Repository
 │   │       │   ├── dto/                # 요청/응답 DTO (Java record)
 │   │       │   └── common/             # 공통 유틸, 예외 처리
@@ -61,6 +64,8 @@ ai-test-forge/
 │   │       ├── components/
 │   │       │   ├── ui/                 # 재사용 UI (Button, Input, Modal, Toast)
 │   │       │   ├── chat/              # 채팅 전용 (MessageBubble, InputBar, ToolCallCard)
+│   │       │   ├── subdomain/         # 서브도메인 관련 컴포넌트
+│   │       │   ├── recipe/            # 레시피 관련 컴포넌트
 │   │       │   └── layout/           # 레이아웃 (Sidebar, Header)
 │   │       ├── pages/                 # 페이지 컴포넌트 (Chat, Settings, SubdomainList)
 │   │       ├── hooks/                 # 커스텀 hooks
@@ -131,7 +136,7 @@ Controller → Service → Infra → External
 | 서브패키지 | 역할 | 인터페이스 | Mock 전략 |
 |-----------|------|-----------|-----------|
 | `ai/` | AI 채팅 완성 | `AiService` | `@Profile("local")` MockAiService |
-| `http/` | 서브도메인 API 호출 | 없음 (단일 구현) | 없음 |
+| `auth/` | JWT 인증 처리 | 없음 (단일 구현) | 없음 |
 
 **규칙:**
 - 외부 서비스는 인터페이스 + 구현체 + Mock 구조 유지

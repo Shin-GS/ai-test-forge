@@ -70,4 +70,19 @@ public class SubdomainSpec {
     public void markStale() {
         this.status = SpecStatus.STALE;
     }
+
+    /**
+     * 비동기 파싱 완료 후 ACTIVE 상태로 전환.
+     */
+    public void activate() {
+        this.status = SpecStatus.ACTIVE;
+        this.lastHeartbeatAt = LocalDateTime.now();
+    }
+
+    /**
+     * 비동기 파싱 시작 — REGISTERING 상태로 전환.
+     */
+    public void markRegistering() {
+        this.status = SpecStatus.REGISTERING;
+    }
 }

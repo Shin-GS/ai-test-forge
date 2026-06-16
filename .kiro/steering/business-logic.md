@@ -93,7 +93,7 @@ curl -X POST http://main-server:8080/api/v1/specs/register \
 ## 2. 채팅 세션
 
 - 생성: 사용자가 새 대화 시작 시 세션 생성
-- 상태: ACTIVE → COMPLETED
+- 상태: ACTIVE → WAITING (AI가 추가 정보 요청) → ACTIVE (사용자 응답) → COMPLETED
 - 세션 내 메시지: 사용자 메시지, AI 응답, 툴 콜 결과 모두 저장
 - 컨텍스트 관리: 세션 내 모든 메시지를 AI에게 전달 (히스토리)
 - 세션 종료: 사용자가 명시적으로 종료하거나, AI가 작업 완료 판단 시
@@ -360,11 +360,12 @@ public interface AiService {
 
 **DB 구조:**
 ```
-USER: id, email, name, auth_provider, ...
+USERS: id, email, password, name, role, created_at
 WORKSPACE: id, user_id, name, is_default, created_at
 WORKSPACE_MAPPING: id, workspace_id, subdomain_name, environment
-AUTH_TOKEN: id, user_id, subdomain_name, environment, encrypted_credential, token, expires_at
 ```
+
+> **참고:** 서브도메인 인증은 브라우저 쿠키 기반(FE 직접 호출)이므로 AUTH_TOKEN 테이블은 현재 불필요. 향후 BE에서 서브도메인 API를 직접 호출하는 기능 추가 시 도입 검토.
 
 ## 11. 신입 친화 UX
 

@@ -121,7 +121,7 @@ ai-test-forge:
 - Tailwind CSS 4는 `@import "tailwindcss"` 방식 (기존 @tailwind 지시어 사용 안 함)
 - Vite 6에서 proxy 설정 시 `changeOrigin: true` 필수
 - Spring Boot 4.x에서 Jakarta EE 11 네임스페이스 (`jakarta.` prefix)
-- Spring Boot 4.x에서 Jackson 3이 기본 — ObjectMapper → JsonMapper, 새 패키지 구조
+- Spring Boot 4.x에서 Jackson 3이 기본으로 예정되어 있으나, 현재(4.0.6)는 Jackson 2 호환 유지 중 — `com.fasterxml.jackson.databind.ObjectMapper` 사용
 - OpenAI function calling 응답의 `tool_calls` 배열 파싱 주의
 - Claude tool use는 응답 구조가 OpenAI와 다름 → 각 구현체에서 개별 파싱
 - Virtual Threads 사용 시 synchronized 블록 내 blocking I/O 주의 (pinning 이슈)

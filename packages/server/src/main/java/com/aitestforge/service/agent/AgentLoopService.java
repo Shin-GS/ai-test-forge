@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -57,6 +58,15 @@ public class AgentLoopService {
     @Value("${agent-loop.timeout-seconds:120}")
     private int timeoutSeconds;
 
+    @Value("${agent-loop.max-tool-calls-per-turn:5}")
+    private int maxToolCallsPerTurn;
+
+    @Value("${agent-loop.max-concurrent:10}")
+    private int maxConcurrent;
+
+    // 전체 동시 Agent Loop 실행 수 추적
+    private final AtomicInteger activeLoopCount = new AtomicInteger(0);
+
     // 세션별 SSE emitter 관리
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
@@ -79,12 +89,38 @@ public class AgentLoopService {
 
     /**
      * 사용자 메시지를 받아 Agent Loop 첫 턴을 시작한다.
+     * 동시 실행 한도 초과 시 에러 SSE 이벤트를 전송하고 즉시 종료한다.
      */
     public void startLoop(Long sessionId, String userMessage) {
-        chatService.addUserMessage(sessionId, userMessage);
-        // 새 루프 시작 — 상태 초기화
-        loopStates.put(sessionId, new LoopState(Instant.now(), 0));
-        processNextTurn(sessionId);
+        // 동시 실행 수 검사 (CAS 기반 원자적 증가)
+        while (true) {
+            int current = activeLoopCount.get();
+            if (current >= maxConcurrent) {
+                String msg = String.format(
+                        "현재 동시 실행 한도(%d)를 초과하였습니다. 잠시 후 다시 시도해 주세요.", maxConcurrent);
+                log.warn("Agent loop concurrent limit exceeded: {}/{}", current, maxConcurrent);
+                sendSseEvent(sessionId, "error", Map.of("message", msg, "code", "E004"));
+                sendSseEvent(sessionId, "done", Map.of());
+                completeEmitter(sessionId);
+                return;
+            }
+            if (activeLoopCount.compareAndSet(current, current + 1)) {
+                break;
+            }
+        }
+
+        try {
+            chatService.addUserMessage(sessionId, userMessage);
+            // 새 루프 시작 — 상태 초기화
+            loopStates.put(sessionId, new LoopState(Instant.now(), 0));
+            processNextTurn(sessionId);
+        } catch (Exception e) {
+            log.error("Agent loop start failed for session {}: {}", sessionId, e.getMessage(), e);
+            activeLoopCount.decrementAndGet();
+            sendSseEvent(sessionId, "error", Map.of("message", "Agent Loop 시작 중 오류가 발생했습니다."));
+            sendSseEvent(sessionId, "done", Map.of());
+            completeEmitter(sessionId);
+        }
     }
 
     /**
@@ -149,6 +185,11 @@ public class AgentLoopService {
                 sendSseEvent(sessionId, "done", Map.of());
                 chatService.completeSession(sessionId);
                 completeEmitter(sessionId);
+            } else {
+                log.warn("Empty AI response for session {}", sessionId);
+                sendSseEvent(sessionId, "error", Map.of("message", "AI로부터 유효한 응답을 받지 못했습니다."));
+                sendSseEvent(sessionId, "done", Map.of());
+                completeEmitter(sessionId);
             }
         } catch (Exception e) {
             log.error("Agent loop error for session {}: {}", sessionId, e.getMessage(), e);
@@ -197,13 +238,41 @@ public class AgentLoopService {
         String assistantContent = response.message() != null ? response.message() : "";
         chatService.addAssistantMessage(sessionId, assistantContent);
 
-        for (ToolCall toolCall : response.toolCalls()) {
+        List<ToolCall> toolCalls = response.toolCalls();
+        if (toolCalls.size() > maxToolCallsPerTurn) {
+            log.warn("Tool calls exceeded limit for session {}: {} > {}, truncating",
+                    sessionId, toolCalls.size(), maxToolCallsPerTurn);
+            toolCalls = toolCalls.subList(0, maxToolCallsPerTurn);
+        }
+
+        for (ToolCall toolCall : toolCalls) {
+            Map<String, String> parsed = parseToolName(toolCall.name());
             sendSseEvent(sessionId, "tool_call_start", Map.of(
                     "toolCallId", toolCall.id(),
                     "name", toolCall.name(),
+                    "subdomain", parsed.get("subdomain"),
+                    "method", parsed.get("method"),
+                    "path", parsed.get("path"),
                     "arguments", toolCall.argumentsJson()
             ));
         }
+    }
+
+    /**
+     * tool name을 파싱하여 subdomain, method, path를 분리한다.
+     * 포맷: {subdomain}__{METHOD}__{sanitized_path}
+     * 예: user-service__POST__api_members → subdomain=user-service, method=POST, path=/api/members
+     */
+    private Map<String, String> parseToolName(String toolName) {
+        String[] parts = toolName.split("__", 3);
+        if (parts.length < 3) {
+            return Map.of("subdomain", "", "method", "", "path", "");
+        }
+        String subdomain = parts[0];
+        String method = parts[1];
+        // path 복원: api_members → /api/members
+        String path = "/" + parts[2].replace("_", "/");
+        return Map.of("subdomain", subdomain, "method", method, "path", path);
     }
 
     private List<ToolDefinition> buildToolsForSession(Long sessionId) {
@@ -257,12 +326,16 @@ public class AgentLoopService {
         if (emitter != null) {
             emitter.complete();
         }
-        loopStates.remove(sessionId);
+        if (loopStates.remove(sessionId) != null) {
+            activeLoopCount.decrementAndGet();
+        }
     }
 
     private void cleanup(Long sessionId) {
         emitters.remove(sessionId);
-        loopStates.remove(sessionId);
+        if (loopStates.remove(sessionId) != null) {
+            activeLoopCount.decrementAndGet();
+        }
     }
 
     /**

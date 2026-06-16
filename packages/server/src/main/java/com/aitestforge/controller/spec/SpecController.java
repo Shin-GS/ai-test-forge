@@ -1,5 +1,6 @@
 package com.aitestforge.controller.spec;
 
+import com.aitestforge.domain.spec.SpecStatus;
 import com.aitestforge.dto.spec.SpecDetailResponse;
 import com.aitestforge.dto.spec.SpecRegisterRequest;
 import com.aitestforge.dto.spec.SpecRegisterResponse;
@@ -23,10 +24,14 @@ public class SpecController {
 
     private final SpecService specService;
 
-    @Operation(summary = "API 스펙 등록/갱신", description = "서브도메인 서버의 OpenAPI 스펙을 등록하거나 갱신합니다. heartbeat 겸용.")
+    @Operation(summary = "API 스펙 등록/갱신", description = "서브도메인 서버의 OpenAPI 스펙을 등록하거나 갱신합니다. heartbeat 겸용. 대형 스펙(5MB 이상)은 비동기 처리되며 202를 반환합니다.")
     @PostMapping("/register")
     public ResponseEntity<SpecRegisterResponse> register(@Valid @RequestBody SpecRegisterRequest request) {
         SpecRegisterResponse response = specService.register(request);
+
+        if (response.status() == SpecStatus.REGISTERING) {
+            return ResponseEntity.accepted().body(response);
+        }
         return ResponseEntity.ok(response);
     }
 

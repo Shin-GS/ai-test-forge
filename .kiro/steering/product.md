@@ -129,14 +129,17 @@ cd packages/web && pnpm build                  # 프로덕션 빌드
 | 경로 | 대상 | 설명 |
 |------|------|------|
 | `/` | 웹 UI (SPA) | 채팅 인터페이스 (메인) |
+| `/login` | 웹 UI (SPA) | 메인 서버 로그인 페이지 |
 | `/subdomains` | 웹 UI (SPA) | 서브도메인 목록/상태 탭 |
+| `/subdomains/:name` | 웹 UI (SPA) | 서브도메인 상세 (API 목록) |
 | `/recipes` | 웹 UI (SPA) | 레시피 목록/검색 탭 |
 | `/settings` | 웹 UI (SPA) | 설정 탭 |
 | `/api/v1/**` | 서버 API | 메인 서버 REST API |
 | `/api/v1/chat/**` | 서버 API | 채팅/대화 엔드포인트 |
 | `/api/v1/specs/**` | 서버 API | API 스펙 관리 (등록, 조회) |
-| `/api/v1/auth/**` | 서버 API | 서브도메인 인증 |
-| `/api/v1/recipes/**` | 서버 API | 레시피 CRUD |
+| `/api/v1/auth/**` | 서버 API | 메인 서버 인증 (로그인, 회원가입) |
+| `/api/v1/recipes/**` | 서버 API | 레시피 CRUD + 실행 |
+| `/api/v1/workspaces/**` | 서버 API | 워크스페이스 CRUD |
 | `/health` | 서버 | 헬스 체크 |
 
 ## API 설계
