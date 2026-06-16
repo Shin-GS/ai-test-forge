@@ -47,8 +47,8 @@ function AppHeader() {
         🔨 AI Test Forge
       </div>
 
-      {/* 중: 워크스페이스 드롭다운 */}
-      {workspaces.length > 0 && (
+      {/* 중: 워크스페이스 드롭다운 (2개 이상일 때만 표시) */}
+      {workspaces.length > 1 && (
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
