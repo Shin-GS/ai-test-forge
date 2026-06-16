@@ -1,8 +1,6 @@
 package com.aitestforge.service.agent;
 
-import com.aitestforge.domain.chat.ChatMessage;
 import com.aitestforge.domain.chat.ChatSession;
-import com.aitestforge.domain.chat.MessageRole;
 import com.aitestforge.domain.spec.SpecStatus;
 import com.aitestforge.domain.spec.SubdomainSpec;
 import com.aitestforge.dto.chat.ToolResultRequest;
@@ -19,10 +17,12 @@ import com.aitestforge.service.spec.SpecToolConverter;
 import com.aitestforge.service.workspace.WorkspaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,12 +32,10 @@ import java.util.stream.Collectors;
 /**
  * Agent Loop 오케스트레이션.
  *
- * 플로우:
- * 1. 사용자 메시지 수신 → AI 호출
- * 2. AI가 tool_call 반환 → SSE로 FE에 지시
- * 3. FE가 서브도메인 API 직접 호출 → 결과를 POST /tool-result로 전달
- * 4. tool-result 수신 → AI 재호출 → 반복
- * 5. AI가 텍스트만 반환 (tool call 없음) → done 이벤트
+ * 제약:
+ * - 최대 반복 횟수 (기본 20회)
+ * - 전체 타임아웃 (기본 120초)
+ * - 초과 시 에러 메시지 + done 이벤트
  */
 @Slf4j
 @Service
@@ -52,19 +50,28 @@ public class AgentLoopService {
     private final SpecToolConverter specToolConverter;
     private final WorkspaceService workspaceService;
 
+    @Value("${agent-loop.max-iterations:20}")
+    private int maxIterations;
+
+    @Value("${agent-loop.timeout-seconds:120}")
+    private int timeoutSeconds;
+
     // 세션별 SSE emitter 관리
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
+
+    // 세션별 루프 상태 추적
+    private final Map<Long, LoopState> loopStates = new ConcurrentHashMap<>();
 
     /**
      * SSE 연결 생성 (FE가 스트림을 구독할 때 호출).
      */
     public SseEmitter createEmitter(Long sessionId) {
-        SseEmitter emitter = new SseEmitter(120_000L); // 120초 타임아웃
+        SseEmitter emitter = new SseEmitter((long) timeoutSeconds * 1000);
         emitters.put(sessionId, emitter);
 
-        emitter.onCompletion(() -> emitters.remove(sessionId));
-        emitter.onTimeout(() -> emitters.remove(sessionId));
-        emitter.onError(e -> emitters.remove(sessionId));
+        emitter.onCompletion(() -> cleanup(sessionId));
+        emitter.onTimeout(() -> cleanup(sessionId));
+        emitter.onError(e -> cleanup(sessionId));
 
         return emitter;
     }
@@ -74,6 +81,8 @@ public class AgentLoopService {
      */
     public void startLoop(Long sessionId, String userMessage) {
         chatService.addUserMessage(sessionId, userMessage);
+        // 새 루프 시작 — 상태 초기화
+        loopStates.put(sessionId, new LoopState(Instant.now(), 0));
         processNextTurn(sessionId);
     }
 
@@ -81,21 +90,29 @@ public class AgentLoopService {
      * FE에서 tool-result를 수신한 후 다음 턴을 진행한다.
      */
     public void handleToolResult(Long sessionId, ToolResultRequest toolResult) {
-        // tool 결과를 메시지로 저장
         chatService.addToolResultMessage(sessionId, toolResult.toolCallId(), toolResult.body());
 
-        // FE에 tool_call_result 이벤트 전달 (진행 상태 표시용)
         sendSseEvent(sessionId, "tool_call_result", Map.of(
                 "toolCallId", toolResult.toolCallId(),
                 "statusCode", String.valueOf(toolResult.statusCode())
         ));
 
-        // 다음 AI 턴 진행
         processNextTurn(sessionId);
     }
 
     private void processNextTurn(Long sessionId) {
+        // 제약 검사
+        if (!checkConstraints(sessionId)) {
+            return;
+        }
+
         try {
+            // 반복 횟수 증가
+            LoopState state = loopStates.get(sessionId);
+            if (state != null) {
+                loopStates.put(sessionId, new LoopState(state.startedAt(), state.iterationCount() + 1));
+            }
+
             // 현재 대화 히스토리 구성
             List<com.aitestforge.infra.ai.dto.ChatMessage> history = buildHistory(sessionId);
 
@@ -126,12 +143,46 @@ public class AgentLoopService {
         }
     }
 
+    /**
+     * Agent Loop 제약 검사.
+     * 반복 횟수 초과 또는 타임아웃 시 에러 이벤트를 보내고 false 반환.
+     */
+    private boolean checkConstraints(Long sessionId) {
+        LoopState state = loopStates.get(sessionId);
+        if (state == null) return true;
+
+        // 최대 반복 횟수 초과
+        if (state.iterationCount() >= maxIterations) {
+            String msg = String.format("Agent Loop 최대 반복 횟수(%d회)를 초과하여 중단합니다.", maxIterations);
+            log.warn("Agent loop max iterations exceeded for session {}: {}", sessionId, maxIterations);
+            chatService.addAssistantMessage(sessionId, msg);
+            sendSseEvent(sessionId, "message", Map.of("content", msg));
+            sendSseEvent(sessionId, "error", Map.of("message", msg));
+            sendSseEvent(sessionId, "done", Map.of());
+            completeEmitter(sessionId);
+            return false;
+        }
+
+        // 타임아웃
+        long elapsedSeconds = Instant.now().getEpochSecond() - state.startedAt().getEpochSecond();
+        if (elapsedSeconds > timeoutSeconds) {
+            String msg = String.format("Agent Loop 타임아웃(%d초)으로 중단합니다.", timeoutSeconds);
+            log.warn("Agent loop timeout for session {}: {}s elapsed", sessionId, elapsedSeconds);
+            chatService.addAssistantMessage(sessionId, msg);
+            sendSseEvent(sessionId, "message", Map.of("content", msg));
+            sendSseEvent(sessionId, "error", Map.of("message", msg));
+            sendSseEvent(sessionId, "done", Map.of());
+            completeEmitter(sessionId);
+            return false;
+        }
+
+        return true;
+    }
+
     private void handleToolCalls(Long sessionId, AiChatResponse response) {
-        // AI 응답을 assistant 메시지로 저장 (tool call 포함)
         String assistantContent = response.message() != null ? response.message() : "";
         chatService.addAssistantMessage(sessionId, assistantContent);
 
-        // 각 tool call을 SSE로 FE에 전달
         for (ToolCall toolCall : response.toolCalls()) {
             sendSseEvent(sessionId, "tool_call_start", Map.of(
                     "toolCallId", toolCall.id(),
@@ -139,15 +190,9 @@ public class AgentLoopService {
                     "arguments", toolCall.argumentsJson()
             ));
         }
-        // FE가 tool-result를 POST하면 handleToolResult에서 다음 턴 진행
     }
 
-    /**
-     * 세션의 사용자 워크스페이스에 매핑된 서브도메인 스펙만 tool로 변환한다.
-     * 워크스페이스 매핑이 없으면 모든 ACTIVE 스펙을 사용 (fallback).
-     */
     private List<ToolDefinition> buildToolsForSession(Long sessionId) {
-        // 세션에서 userId 가져오기
         ChatSession session = sessionRepository.findById(sessionId).orElse(null);
         if (session == null) {
             return List.of();
@@ -155,10 +200,8 @@ public class AgentLoopService {
 
         Long userId = session.getUserId();
         List<WorkspaceMappingDto> mappings = workspaceService.getDefaultMappings(userId);
-
         List<SubdomainSpec> activeSpecs = specRepository.findByStatus(SpecStatus.ACTIVE);
 
-        // 워크스페이스 매핑이 있으면 필터링
         if (!mappings.isEmpty()) {
             Set<String> allowedKeys = mappings.stream()
                     .map(m -> m.subdomainName() + ":" + m.environment())
@@ -167,8 +210,6 @@ public class AgentLoopService {
             activeSpecs = activeSpecs.stream()
                     .filter(spec -> allowedKeys.contains(spec.getName() + ":" + spec.getEnvironment()))
                     .toList();
-
-            log.debug("Workspace filter applied: {} specs (from {} total)", activeSpecs.size(), allowedKeys.size());
         }
 
         return specToolConverter.convertAll(activeSpecs);
@@ -202,5 +243,17 @@ public class AgentLoopService {
         if (emitter != null) {
             emitter.complete();
         }
+        loopStates.remove(sessionId);
+    }
+
+    private void cleanup(Long sessionId) {
+        emitters.remove(sessionId);
+        loopStates.remove(sessionId);
+    }
+
+    /**
+     * Agent Loop 상태를 추적하는 레코드.
+     */
+    private record LoopState(Instant startedAt, int iterationCount) {
     }
 }
