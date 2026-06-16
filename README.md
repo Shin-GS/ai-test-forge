@@ -123,14 +123,19 @@ cp .env.example .env          # DB, AI API 키 설정
 # 2. DB 생성
 mysql -e "CREATE DATABASE ai_test_forge CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-# 3. 서버 실행
-cd packages/server && ./gradlew bootRun
+# 3. 서버 실행 (루트에서)
+./gradlew :packages:server:bootRun
 
 # 4. UI 실행 (별도 터미널)
 cd packages/web && pnpm install && pnpm dev
+
+# 5. 초기 계정 생성 (서버 실행 후)
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@test.com","password":"admin1234","name":"관리자"}'
 ```
 
-브라우저에서 `http://localhost:5173` 접속 → 로그인 → 채팅 시작!
+브라우저에서 `http://localhost:5173` 접속 → 위 계정으로 로그인 → 채팅 시작!
 
 ---
 
@@ -223,7 +228,7 @@ AI:     ✅ 30초 만에 완료 (AI 호출 없이 직접 실행 — 비용 0)
 | 실시간 | SSE (서버→FE) + REST (FE→서버) |
 | 클라이언트 라이브러리 | Spring Boot Starter (Java 17+) |
 | DB | MySQL 8.x |
-| AI | OpenAI, Claude (인터페이스 기반 교체) |
+| AI | OpenAI, Claude, OpenRouter (인터페이스 기반 교체) |
 
 ---
 

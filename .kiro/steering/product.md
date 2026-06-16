@@ -110,18 +110,18 @@ ai-test-forge/
 ## 빌드 & 실행
 
 ```bash
-# 서버
-cd packages/server && ./gradlew bootRun        # 실행
-cd packages/server && ./gradlew bootJar        # JAR 빌드
-cd packages/server && ./gradlew test           # 테스트
+# 서버 (루트 디렉토리에서 실행)
+./gradlew :packages:server:bootRun        # 실행
+./gradlew :packages:server:bootJar        # JAR 빌드
+./gradlew :packages:server:test           # 테스트
 
 # 웹 UI
 cd packages/web && pnpm dev                    # 개발 서버
 cd packages/web && pnpm build                  # 프로덕션 빌드
 
 # 클라이언트 라이브러리
-cd packages/client-spring && ./gradlew build   # 빌드 + 테스트
-cd packages/client-spring && ./gradlew publishToMavenLocal  # 로컬 퍼블리시
+./gradlew :packages:client-spring:build        # 빌드 + 테스트
+./gradlew :packages:client-spring:publishToMavenLocal  # 로컬 퍼블리시
 ```
 
 ## URL 구조
