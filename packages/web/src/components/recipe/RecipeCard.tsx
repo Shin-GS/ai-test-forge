@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { RecipeResponse, RecipeStep } from '@/types/recipe'
+import { deleteRecipe } from '@/services/recipeApi'
 
 interface RecipeCardProps {
   recipe: RecipeResponse
@@ -7,6 +9,14 @@ interface RecipeCardProps {
 
 function RecipeCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteRecipe(recipe.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    },
+  })
 
   // stepsJson 파싱
   const steps = parseSteps(recipe.stepsJson)
@@ -14,12 +24,17 @@ function RecipeCard({ recipe }: RecipeCardProps) {
   const variableCount = countVariables(steps)
 
   const handleRun = () => {
-    // 채팅 탭으로 이동 (추후 레시피 실행 로직 연동)
     navigate('/')
   }
 
   const handleDetail = () => {
-    // 상세 보기 placeholder (미구현)
+    // 상세 보기 placeholder
+  }
+
+  const handleDelete = () => {
+    if (window.confirm(`"${recipe.name}" 레시피를 삭제하시겠습니까?`)) {
+      deleteMutation.mutate()
+    }
   }
 
   return (
@@ -77,6 +92,14 @@ function RecipeCard({ recipe }: RecipeCardProps) {
           onClick={handleDetail}
         >
           상세 보기
+        </button>
+        <button
+          type="button"
+          disabled={deleteMutation.isPending}
+          className="ml-auto rounded-lg px-3 py-1.5 text-sm text-[var(--color-error)] hover:bg-[var(--color-error-subtle)] disabled:opacity-50"
+          onClick={handleDelete}
+        >
+          {deleteMutation.isPending ? '삭제 중...' : '삭제'}
         </button>
       </div>
     </div>
