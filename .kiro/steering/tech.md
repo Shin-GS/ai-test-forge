@@ -143,9 +143,9 @@ ai-test-forge:
 - 기존 ThreadPoolTaskExecutor 수동 설정 불필요 → AsyncConfig에서 스레드 풀 제거.
 - 주의: synchronized 블록 내 blocking I/O 시 carrier thread pinning 발생.
 
-### Gradle 8.14.5
+### Gradle 9.5.1
 - Boot 4.0 Gradle 플러그인 요구사항: Gradle 8.14 이상.
-- 9.x는 메이저 업그레이드로 호환성 검증 필요하여 8.x 최신 유지.
+- 9.x 호환성 검증 완료하여 최신 9.5.1로 업그레이드.
 
 ### springdoc-openapi 3.0.3
 - 2.x는 Boot 3.x 전용, 3.0.x가 Boot 4 호환.
