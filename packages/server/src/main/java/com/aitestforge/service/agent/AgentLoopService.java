@@ -23,6 +23,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -97,6 +98,19 @@ public class AgentLoopService {
                 "statusCode", String.valueOf(toolResult.statusCode())
         ));
 
+        // 반복 실패 감지 (동일 tool call이 3회 이상 실패 시 중단)
+        LoopState state = loopStates.get(sessionId);
+        if (state != null && state.recordFailure(toolResult.toolCallId(), toolResult.statusCode())) {
+            String msg = "동일 API 호출이 반복 실패하여 Agent Loop를 중단합니다.";
+            log.warn("Repeated failure detected for session {}, toolCall {}", sessionId, toolResult.toolCallId());
+            chatService.addAssistantMessage(sessionId, msg);
+            sendSseEvent(sessionId, "message", Map.of("content", msg));
+            sendSseEvent(sessionId, "error", Map.of("message", msg));
+            sendSseEvent(sessionId, "done", Map.of());
+            completeEmitter(sessionId);
+            return;
+        }
+
         processNextTurn(sessionId);
     }
 
@@ -110,7 +124,7 @@ public class AgentLoopService {
             // 반복 횟수 증가
             LoopState state = loopStates.get(sessionId);
             if (state != null) {
-                loopStates.put(sessionId, new LoopState(state.startedAt(), state.iterationCount() + 1));
+                state.incrementIteration();
             }
 
             // 현재 대화 히스토리 구성
@@ -252,8 +266,31 @@ public class AgentLoopService {
     }
 
     /**
-     * Agent Loop 상태를 추적하는 레코드.
+     * Agent Loop 상태를 추적하는 내부 클래스.
      */
-    private record LoopState(Instant startedAt, int iterationCount) {
+    private static class LoopState {
+        private final Instant startedAt;
+        private int iterationCount;
+        private final Map<String, Integer> failureTracker = new HashMap<>();
+
+        LoopState(Instant startedAt, int iterationCount) {
+            this.startedAt = startedAt;
+            this.iterationCount = iterationCount;
+        }
+
+        Instant startedAt() { return startedAt; }
+        int iterationCount() { return iterationCount; }
+        void incrementIteration() { this.iterationCount++; }
+
+        /**
+         * 실패를 기록하고, 동일 키로 3회 이상 실패 시 true 반환.
+         */
+        boolean recordFailure(String toolCallId, int statusCode) {
+            if (statusCode >= 400) {
+                int count = failureTracker.merge(toolCallId, 1, Integer::sum);
+                return count >= 3;
+            }
+            return false;
+        }
     }
 }
