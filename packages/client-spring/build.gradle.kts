@@ -21,6 +21,8 @@ dependencies {
     implementation("org.slf4j:slf4j-api")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
+    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:3.0.3")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
