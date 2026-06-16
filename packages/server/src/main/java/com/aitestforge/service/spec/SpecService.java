@@ -1,11 +1,13 @@
 package com.aitestforge.service.spec;
 
+import com.aitestforge.common.exception.BusinessException;
+import com.aitestforge.common.exception.ErrorCode;
 import com.aitestforge.domain.spec.SpecStatus;
 import com.aitestforge.domain.spec.SubdomainSpec;
-import com.aitestforge.dto.spec.SpecRegisterRequest;
-import com.aitestforge.dto.spec.SpecRegisterResponse;
-import com.aitestforge.dto.spec.SpecResponse;
+import com.aitestforge.dto.spec.*;
 import com.aitestforge.repository.SubdomainSpecRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,9 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -24,6 +24,7 @@ import java.util.Optional;
 public class SpecService {
 
     private final SubdomainSpecRepository specRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * 서브도메인 API 스펙 등록/갱신/heartbeat 겸용.
@@ -109,5 +110,67 @@ public class SpecService {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 not available", e);
         }
+    }
+
+    /**
+     * 서브도메인 상세 조회 — OpenAPI JSON에서 API 엔드포인트 목록을 파싱하여 반환.
+     */
+    public SpecDetailResponse getDetail(String name, String environment) {
+        SubdomainSpec spec = specRepository.findByNameAndEnvironment(name, environment)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        List<ApiEndpointResponse> endpoints = parseEndpoints(spec.getSpecJson());
+        return SpecDetailResponse.from(spec, endpoints);
+    }
+
+    private List<ApiEndpointResponse> parseEndpoints(String specJson) {
+        if (specJson == null || specJson.isBlank()) {
+            return List.of();
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(specJson);
+            JsonNode paths = root.get("paths");
+            if (paths == null || !paths.isObject()) {
+                return List.of();
+            }
+
+            List<ApiEndpointResponse> endpoints = new ArrayList<>();
+            Iterator<Map.Entry<String, JsonNode>> pathIter = paths.fields();
+
+            while (pathIter.hasNext()) {
+                Map.Entry<String, JsonNode> pathEntry = pathIter.next();
+                String path = pathEntry.getKey();
+                JsonNode methods = pathEntry.getValue();
+
+                Iterator<Map.Entry<String, JsonNode>> methodIter = methods.fields();
+                while (methodIter.hasNext()) {
+                    Map.Entry<String, JsonNode> methodEntry = methodIter.next();
+                    String method = methodEntry.getKey().toUpperCase();
+                    JsonNode operation = methodEntry.getValue();
+
+                    if (!isHttpMethod(method)) continue;
+
+                    String summary = operation.path("summary").asText("");
+                    String tag = "";
+                    JsonNode tags = operation.get("tags");
+                    if (tags != null && tags.isArray() && !tags.isEmpty()) {
+                        tag = tags.get(0).asText("");
+                    }
+
+                    endpoints.add(new ApiEndpointResponse(method, path, summary, tag));
+                }
+            }
+
+            return endpoints;
+        } catch (Exception e) {
+            log.warn("Failed to parse endpoints: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    private boolean isHttpMethod(String method) {
+        return method.equals("GET") || method.equals("POST") ||
+               method.equals("PUT") || method.equals("DELETE") || method.equals("PATCH");
     }
 }

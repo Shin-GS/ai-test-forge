@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { SpecResponse } from '@/types/spec'
 import { formatRelativeTime } from '@/utils/formatRelativeTime'
 
@@ -8,7 +9,14 @@ interface SubdomainCardProps {
 
 function SubdomainCard({ spec }: SubdomainCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const navigate = useNavigate()
   const isStale = spec.status === 'STALE'
+
+  const handleEnvironmentClick = () => {
+    navigate(
+      `/subdomains/${encodeURIComponent(spec.name)}?environment=${encodeURIComponent(spec.environment)}`,
+    )
+  }
 
   return (
     <div
@@ -48,7 +56,19 @@ function SubdomainCard({ spec }: SubdomainCardProps) {
               {spec.description}
             </p>
           )}
-          <div className="mb-2 flex items-center justify-between rounded-md bg-[var(--color-bg-tertiary)] px-3 py-2 text-sm">
+          <div
+            className="mb-2 flex cursor-pointer items-center justify-between rounded-md bg-[var(--color-bg-tertiary)] px-3 py-2 text-sm hover:bg-[var(--color-bg-hover)]"
+            onClick={handleEnvironmentClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleEnvironmentClick()
+              }
+            }}
+            aria-label={`${spec.name} ${spec.environment} 환경 상세 보기`}
+          >
             <div className="flex items-center gap-2">
               <span className="text-[var(--color-accent)]">●</span>
               <span>{spec.environment}</span>

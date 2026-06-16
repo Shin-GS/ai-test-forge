@@ -1,5 +1,6 @@
 package com.aitestforge.controller.spec;
 
+import com.aitestforge.dto.spec.SpecDetailResponse;
 import com.aitestforge.dto.spec.SpecRegisterRequest;
 import com.aitestforge.dto.spec.SpecRegisterResponse;
 import com.aitestforge.dto.spec.SpecResponse;
@@ -43,5 +44,13 @@ public class SpecController {
         return specService.getByNameAndEnvironment(name, environment)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "서브도메인 상세 (API 목록)", description = "특정 서브도메인의 파싱된 API 엔드포인트 목록을 조회합니다.")
+    @GetMapping("/{name}/detail")
+    public ResponseEntity<SpecDetailResponse> getDetail(
+            @Parameter(description = "서브도메인 이름") @PathVariable String name,
+            @Parameter(description = "환경 (default: default)") @RequestParam(defaultValue = "default") String environment) {
+        return ResponseEntity.ok(specService.getDetail(name, environment));
     }
 }

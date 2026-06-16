@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import AppLayout from '@/components/layout/AppLayout'
 import ChatPage from '@/pages/ChatPage'
 import SubdomainPage from '@/pages/SubdomainPage'
+import SubdomainDetailPage from '@/pages/SubdomainDetailPage'
 import RecipePage from '@/pages/RecipePage'
 import SettingsPage from '@/pages/SettingsPage'
 import LoginPage from '@/pages/LoginPage'
@@ -48,6 +49,7 @@ function App() {
         >
           <Route path="/" element={<ChatPage />} />
           <Route path="/subdomains" element={<SubdomainPage />} />
+          <Route path="/subdomains/:name" element={<SubdomainDetailPage />} />
           <Route path="/recipes" element={<RecipePage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
