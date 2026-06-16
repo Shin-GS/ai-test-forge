@@ -18,12 +18,18 @@ public record SpecDetailResponse(
         int apiCount,
         List<ApiEndpointResponse> endpoints,
         List<AuthProfileDto> authProfiles,
+        List<ExcludedApiResponse> excludedApis,
         LocalDateTime registeredAt,
         LocalDateTime lastHeartbeatAt
 ) {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static SpecDetailResponse from(SubdomainSpec spec, List<ApiEndpointResponse> endpoints) {
+        return from(spec, endpoints, List.of());
+    }
+
+    public static SpecDetailResponse from(SubdomainSpec spec, List<ApiEndpointResponse> endpoints,
+                                           List<ExcludedApiResponse> excludedApis) {
         return new SpecDetailResponse(
                 spec.getId(),
                 spec.getName(),
@@ -34,6 +40,7 @@ public record SpecDetailResponse(
                 endpoints.size(),
                 endpoints,
                 parseAuthProfiles(spec.getAuthProfilesJson()),
+                excludedApis,
                 spec.getRegisteredAt(),
                 spec.getLastHeartbeatAt()
         );

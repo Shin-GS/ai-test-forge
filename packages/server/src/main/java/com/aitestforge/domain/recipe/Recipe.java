@@ -39,6 +39,22 @@ public class Recipe {
     @Column(name = "STEPS_JSON", columnDefinition = "LONGTEXT", nullable = false)
     private String stepsJson;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "VISIBILITY", nullable = false)
+    @Builder.Default
+    private RecipeVisibility visibility = RecipeVisibility.PUBLIC;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "VALIDATION_STATUS")
+    private RecipeValidationStatus validationStatus;
+
+    @Column(name = "VALIDATION_MESSAGE")
+    private String validationMessage;
+
+    @Lob
+    @Column(name = "VARIABLES_JSON", columnDefinition = "TEXT")
+    private String variablesJson;
+
     @Column(name = "USAGE_COUNT", nullable = false)
     @Builder.Default
     private Integer usageCount = 0;
@@ -55,10 +71,18 @@ public class Recipe {
         this.lastUsedAt = LocalDateTime.now();
     }
 
-    public void update(String name, String description, List<String> tags, String stepsJson) {
+    public void update(String name, String description, List<String> tags, String stepsJson,
+                       RecipeVisibility visibility, String variablesJson) {
         this.name = name;
         this.description = description;
         this.tags = tags;
         this.stepsJson = stepsJson;
+        this.visibility = visibility;
+        this.variablesJson = variablesJson;
+    }
+
+    public void updateValidation(RecipeValidationStatus validationStatus, String validationMessage) {
+        this.validationStatus = validationStatus;
+        this.validationMessage = validationMessage;
     }
 }

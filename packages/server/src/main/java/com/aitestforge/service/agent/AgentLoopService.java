@@ -14,6 +14,7 @@ import com.aitestforge.repository.ChatSessionRepository;
 import com.aitestforge.repository.SubdomainSpecRepository;
 import com.aitestforge.service.chat.ChatService;
 import com.aitestforge.service.spec.SpecToolConverter;
+import com.aitestforge.service.spec.SpecControlFilter;
 import com.aitestforge.service.workspace.WorkspaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,7 @@ public class AgentLoopService {
     private final ChatSessionRepository sessionRepository;
     private final SubdomainSpecRepository specRepository;
     private final SpecToolConverter specToolConverter;
+    private final SpecControlFilter specControlFilter;
     private final WorkspaceService workspaceService;
     private final TwoStageFilterService twoStageFilterService;
 
@@ -172,7 +174,7 @@ public class AgentLoopService {
 
             // 2-Stage 필터: 첫 번째 턴에서만 적용 (이후 턴은 이미 필터된 상태로 진행)
             if (state != null && state.iterationCount() == 1 && state.userMessage() != null) {
-                tools = twoStageFilterService.filterToolsIfNeeded(state.userMessage(), tools);
+                tools = twoStageFilterService.filterTools(tools, state.userMessage());
                 state.setFilteredTools(tools);
             } else if (state != null && state.filteredTools() != null) {
                 // 이후 턴에서는 첫 턴에서 필터된 tool 목록을 재사용
@@ -272,13 +274,33 @@ public class AgentLoopService {
 
         for (ToolCall toolCall : toolCalls) {
             Map<String, String> parsed = parseToolName(toolCall.name());
+
+            // 해당 tool의 control 메타데이터 조회 (block/confirm/readonly 정보)
+            LoopState loopState = loopStates.get(sessionId);
+            String controlJson = "{}";
+            if (loopState != null && loopState.filteredTools() != null) {
+                controlJson = loopState.filteredTools().stream()
+                        .filter(t -> t.name().equals(toolCall.name()))
+                        .findFirst()
+                        .map(t -> {
+                            try {
+                                var om = new com.fasterxml.jackson.databind.ObjectMapper();
+                                return om.writeValueAsString(t.control());
+                            } catch (Exception e) {
+                                return "{}";
+                            }
+                        })
+                        .orElse("{}");
+            }
+
             sendSseEvent(sessionId, "tool_call_start", Map.of(
                     "toolCallId", toolCall.id(),
                     "name", toolCall.name(),
                     "subdomain", parsed.get("subdomain"),
                     "method", parsed.get("method"),
                     "path", parsed.get("path"),
-                    "arguments", toolCall.argumentsJson()
+                    "arguments", toolCall.argumentsJson(),
+                    "control", controlJson
             ));
         }
     }
@@ -320,7 +342,8 @@ public class AgentLoopService {
                     .toList();
         }
 
-        return specToolConverter.convertAll(activeSpecs);
+        List<ToolDefinition> tools = specToolConverter.convertAll(activeSpecs);
+        return specControlFilter.applyGlobalExclude(tools);
     }
 
     private List<com.aitestforge.infra.ai.dto.ChatMessage> buildHistory(Long sessionId) {

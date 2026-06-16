@@ -1,6 +1,7 @@
 package com.aitestforge.service.spec;
 
 import com.aitestforge.domain.spec.SubdomainSpec;
+import com.aitestforge.infra.ai.dto.ToolControl;
 import com.aitestforge.infra.ai.dto.ToolDefinition;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +17,7 @@ import java.util.Map;
 /**
  * OpenAPI JSON 스펙에서 AI에게 전달할 ToolDefinition 목록을 추출한다.
  * 각 엔드포인트를 하나의 tool로 변환.
+ * x-test-forge-* 확장 필드를 파싱하여 ToolControl 메타데이터를 포함한다.
  */
 @Slf4j
 @Component
@@ -23,6 +25,7 @@ import java.util.Map;
 public class SpecToolConverter {
 
     private final ObjectMapper objectMapper;
+    private final SpecControlFilter specControlFilter;
 
     /**
      * 여러 서브도메인 스펙에서 tool 목록을 추출한다.
@@ -67,11 +70,21 @@ public class SpecToolConverter {
                     // GET/POST/PUT/DELETE/PATCH만 처리
                     if (!isHttpMethod(method)) continue;
 
+                    // x-test-forge-exclude: true이면 tool 목록에서 제거
+                    if (specControlFilter.isExcluded(operation)) {
+                        log.debug("Excluded by x-test-forge-exclude: {} {} ({})",
+                                method, path, spec.getName());
+                        continue;
+                    }
+
+                    // x-test-forge-* 확장 필드 파싱
+                    ToolControl control = specControlFilter.parseControlFromOperation(operation);
+
                     String toolName = buildToolName(spec.getName(), method, path);
-                    String description = buildDescription(spec, method, path, operation);
+                    String description = buildDescription(spec, method, path, operation, control);
                     String parametersJson = buildParametersJson(operation);
 
-                    tools.add(new ToolDefinition(toolName, description, parametersJson));
+                    tools.add(new ToolDefinition(toolName, description, parametersJson, control));
                 }
             }
 
@@ -97,7 +110,8 @@ public class SpecToolConverter {
         return subdomain + "__" + method + "__" + sanitized;
     }
 
-    private String buildDescription(SubdomainSpec spec, String method, String path, JsonNode operation) {
+    private String buildDescription(SubdomainSpec spec, String method, String path,
+                                    JsonNode operation, ToolControl control) {
         StringBuilder sb = new StringBuilder();
         sb.append("[").append(spec.getName()).append("] ");
         sb.append(method).append(" ").append(path);
@@ -105,6 +119,21 @@ public class SpecToolConverter {
         JsonNode summary = operation.get("summary");
         if (summary != null && !summary.asText().isBlank()) {
             sb.append(" — ").append(summary.asText());
+        }
+
+        // x-test-forge-hint → description 끝에 AI Hint 추가
+        String hint = specControlFilter.parseHint(operation);
+        if (hint != null && !hint.isBlank()) {
+            sb.append(" [AI Hint: ").append(hint).append("]");
+        }
+
+        // x-test-forge-block → description 끝에 BLOCKED 표기
+        if (control.blocked()) {
+            sb.append(" [BLOCKED");
+            if (control.blockReason() != null && !control.blockReason().isBlank()) {
+                sb.append(": ").append(control.blockReason());
+            }
+            sb.append("]");
         }
 
         return sb.toString();

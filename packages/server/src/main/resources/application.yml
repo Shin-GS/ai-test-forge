@@ -28,6 +28,10 @@ spec-registry:
   stale-threshold: ${SPEC_STALE_THRESHOLD:5m}
   auto-delete-threshold: ${SPEC_AUTO_DELETE_THRESHOLD:30m}
   async-threshold: ${SPEC_ASYNC_THRESHOLD:5242880}
+  global-exclude:
+    methods: ${SPEC_GLOBAL_EXCLUDE_METHODS:}
+    path-patterns: ${SPEC_GLOBAL_EXCLUDE_PATH_PATTERNS:}
+    tags: ${SPEC_GLOBAL_EXCLUDE_TAGS:}
 
 agent-loop:
   max-iterations: ${AGENT_MAX_ITERATIONS:20}

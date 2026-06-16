@@ -6,6 +6,7 @@ import com.aitestforge.domain.spec.SpecStatus;
 import com.aitestforge.domain.spec.SubdomainSpec;
 import com.aitestforge.dto.spec.*;
 import com.aitestforge.repository.SubdomainSpecRepository;
+import com.aitestforge.service.recipe.RecipeSpecValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class SpecService {
     private final SubdomainSpecRepository specRepository;
     private final ObjectMapper objectMapper;
     private final SpecAsyncProcessor specAsyncProcessor;
+    private final RecipeSpecValidator recipeSpecValidator;
 
     @Value("${spec-registry.async-threshold:5242880}")
     private long asyncThreshold;
@@ -106,6 +108,9 @@ public class SpecService {
         String newHash = computeHash(request.specJson());
         spec.updateSpec(request.specJson(), newHash, request.baseUrl());
         log.info("Spec updated: {} ({})", request.name(), request.environment());
+
+        // 스펙 갱신 후 관련 레시피 백그라운드 검증 트리거
+        recipeSpecValidator.validateAllForSubdomain(request.name(), request.environment());
 
         return new SpecRegisterResponse(
                 spec.getId(), spec.getName(), spec.getEnvironment(),

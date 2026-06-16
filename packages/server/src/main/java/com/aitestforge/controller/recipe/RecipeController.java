@@ -3,10 +3,15 @@ package com.aitestforge.controller.recipe;
 import com.aitestforge.domain.auth.User;
 import com.aitestforge.dto.recipe.CreateRecipeRequest;
 import com.aitestforge.dto.recipe.ExecuteRecipeRequest;
+import com.aitestforge.dto.recipe.GenerateRecipeFromSessionRequest;
 import com.aitestforge.dto.recipe.RecipeResponse;
+import com.aitestforge.dto.recipe.RecipeValidationResult;
 import com.aitestforge.dto.recipe.UpdateRecipeRequest;
 import com.aitestforge.service.recipe.RecipeExecutionService;
+import com.aitestforge.service.recipe.RecipeSaverService;
 import com.aitestforge.service.recipe.RecipeService;
+import com.aitestforge.service.recipe.RecipeSpecValidator;
+import com.aitestforge.service.recipe.RecipeSuggestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +33,9 @@ public class RecipeController {
 
     private final RecipeService recipeService;
     private final RecipeExecutionService recipeExecutionService;
+    private final RecipeSpecValidator recipeSpecValidator;
+    private final RecipeSaverService recipeSaverService;
+    private final RecipeSuggestionService recipeSuggestionService;
 
     @Operation(summary = "레시피 생성", description = "새 레시피를 생성합니다.")
     @PostMapping
@@ -35,6 +43,14 @@ public class RecipeController {
             @Valid @RequestBody CreateRecipeRequest request,
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(recipeService.create(request, user.getId()));
+    }
+
+    @Operation(summary = "유사 레시피 제안", description = "사용자 요청과 유사한 레시피를 검색합니다.")
+    @GetMapping("/suggest")
+    public ResponseEntity<List<RecipeResponse>> suggest(
+            @Parameter(description = "검색 쿼리") @RequestParam String query,
+            @Parameter(description = "최대 반환 건수") @RequestParam(defaultValue = "3") int maxResults) {
+        return ResponseEntity.ok(recipeSuggestionService.suggest(query, maxResults));
     }
 
     @Operation(summary = "레시피 목록 조회", description = "현재 사용자의 레시피를 사용 횟수 순으로 조회합니다.")
@@ -54,16 +70,26 @@ public class RecipeController {
     @PutMapping("/{recipeId}")
     public ResponseEntity<RecipeResponse> update(
             @Parameter(description = "레시피 ID") @PathVariable Long recipeId,
-            @Valid @RequestBody UpdateRecipeRequest request) {
-        return ResponseEntity.ok(recipeService.update(recipeId, request));
+            @Valid @RequestBody UpdateRecipeRequest request,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(recipeService.update(recipeId, request, user.getId()));
     }
 
     @Operation(summary = "레시피 삭제", description = "레시피를 삭제합니다.")
     @DeleteMapping("/{recipeId}")
     public ResponseEntity<Void> delete(
-            @Parameter(description = "레시피 ID") @PathVariable Long recipeId) {
-        recipeService.delete(recipeId);
+            @Parameter(description = "레시피 ID") @PathVariable Long recipeId,
+            @AuthenticationPrincipal User user) {
+        recipeService.delete(recipeId, user.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "레시피 복제", description = "다른 사용자의 레시피를 복제하여 내 레시피로 저장합니다.")
+    @PostMapping("/{recipeId}/clone")
+    public ResponseEntity<RecipeResponse> clone(
+            @Parameter(description = "레시피 ID") @PathVariable Long recipeId,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(recipeService.clone(recipeId, user.getId()));
     }
 
     @Operation(summary = "레시피 실행", description = "AI 비호출로 저장된 단계를 순차 실행합니다. SSE 스트림을 반환합니다.")
@@ -87,5 +113,20 @@ public class RecipeController {
             @RequestBody String resultBody) {
         recipeExecutionService.handleStepResult(sessionId, toolCallId, resultBody);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "레시피 스펙 검증", description = "레시피의 각 step이 현재 API 스펙과 호환되는지 검증합니다.")
+    @PostMapping("/{recipeId}/validate")
+    public ResponseEntity<RecipeValidationResult> validate(
+            @Parameter(description = "레시피 ID") @PathVariable Long recipeId) {
+        return ResponseEntity.ok(recipeSpecValidator.validate(recipeService.getRecipeEntity(recipeId)));
+    }
+
+    @Operation(summary = "대화 이력에서 레시피 생성", description = "채팅 세션의 tool_call 이력을 기반으로 레시피를 자동 생성합니다.")
+    @PostMapping("/generate-from-session")
+    public ResponseEntity<RecipeResponse> generateFromSession(
+            @Valid @RequestBody GenerateRecipeFromSessionRequest request,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(recipeSaverService.generateFromSession(request, user.getId()));
     }
 }
