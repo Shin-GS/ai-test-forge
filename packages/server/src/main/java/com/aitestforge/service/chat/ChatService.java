@@ -95,6 +95,25 @@ public class ChatService {
         session.complete();
     }
 
+    @Transactional
+    public void waitSession(Long sessionId) {
+        ChatSession session = findSessionOrThrow(sessionId);
+        session.waitForUser();
+        log.info("Chat session {} transitioned to WAITING", sessionId);
+    }
+
+    @Transactional
+    public void resumeSession(Long sessionId) {
+        ChatSession session = findSessionOrThrow(sessionId);
+        session.resume();
+        log.info("Chat session {} resumed from WAITING to ACTIVE", sessionId);
+    }
+
+    public boolean isWaiting(Long sessionId) {
+        ChatSession session = findSessionOrThrow(sessionId);
+        return session.getStatus() == com.aitestforge.domain.chat.SessionStatus.WAITING;
+    }
+
     private ChatSession findSessionOrThrow(Long sessionId) {
         return sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));

@@ -64,6 +64,9 @@ public class SpecService {
     }
 
     private SpecRegisterResponse handleExisting(SubdomainSpec spec, SpecRegisterRequest request) {
+        // authProfiles가 있으면 갱신
+        updateAuthProfilesIfPresent(spec, request);
+
         // specJson이 없으면 heartbeat만
         if (request.specJson() == null || request.specJson().isBlank()) {
             // 해시 비교 — 불일치면 재전송 필요 알림
@@ -121,6 +124,9 @@ public class SpecService {
                     .status(SpecStatus.REGISTERING)
                     .build();
 
+            // 인증 프로필 저장
+            updateAuthProfilesIfPresent(spec, request);
+
             specRepository.save(spec);
             log.info("Async spec registration started: {} ({})", request.name(), request.environment());
             final Long specId = spec.getId();
@@ -149,6 +155,9 @@ public class SpecService {
                 .specHash(hash)
                 .status(SpecStatus.ACTIVE)
                 .build();
+
+        // 인증 프로필 저장
+        updateAuthProfilesIfPresent(spec, request);
 
         specRepository.save(spec);
         log.info("Spec registered: {} ({})", request.name(), request.environment());
@@ -235,5 +244,19 @@ public class SpecService {
     private boolean isHttpMethod(String method) {
         return method.equals("GET") || method.equals("POST") ||
                method.equals("PUT") || method.equals("DELETE") || method.equals("PATCH");
+    }
+
+    /**
+     * 요청에 authProfiles가 포함되어 있으면 JSON 직렬화하여 엔티티에 저장.
+     */
+    private void updateAuthProfilesIfPresent(SubdomainSpec spec, SpecRegisterRequest request) {
+        if (request.authProfiles() != null && !request.authProfiles().isEmpty()) {
+            try {
+                String json = objectMapper.writeValueAsString(request.authProfiles());
+                spec.updateAuthProfiles(json);
+            } catch (Exception e) {
+                log.warn("Failed to serialize authProfiles: {}", e.getMessage());
+            }
+        }
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClient;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -91,6 +92,15 @@ public class SpecRegistrationService {
         }
         if (specHash != null) {
             body.put("specHash", specHash);
+        }
+
+        // 인증 프로필 메타 정보 추가
+        if (properties.getAuth() != null && properties.getAuth().getProfiles() != null
+                && !properties.getAuth().getProfiles().isEmpty()) {
+            List<Map<String, String>> authProfiles = properties.getAuth().getProfiles().stream()
+                    .map(p -> Map.of("name", p.getName(), "loginPageUrl", p.getLoginPageUrl()))
+                    .toList();
+            body.put("authProfiles", authProfiles);
         }
 
         restClient.post()

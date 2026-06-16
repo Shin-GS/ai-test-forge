@@ -20,4 +20,18 @@ public class AiTestForgeProperties {
     private List<String> profiles = List.of("dev", "qa");
     private String environment = "default";
     private Duration heartbeatInterval = Duration.ofSeconds(30);
+    private Auth auth;
+
+    @Getter
+    @Setter
+    public static class Auth {
+        private List<AuthProfile> profiles = List.of();
+    }
+
+    @Getter
+    @Setter
+    public static class AuthProfile {
+        private String name;
+        private String loginPageUrl;
+    }
 }

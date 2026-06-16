@@ -34,9 +34,14 @@ agent-loop:
   timeout-seconds: ${AGENT_TIMEOUT_SECONDS:120}
   max-tool-calls-per-turn: ${AGENT_MAX_TOOL_CALLS_PER_TURN:5}
   max-concurrent: ${AGENT_MAX_CONCURRENT:10}
+  two-stage-threshold: ${AGENT_TWO_STAGE_THRESHOLD:30}
 
 ai:
   provider: ${AI_PROVIDER:mock}
+  retry:
+    max-attempts: ${AI_RETRY_MAX_ATTEMPTS:3}
+    initial-delay-ms: ${AI_RETRY_INITIAL_DELAY_MS:1000}
+    multiplier: ${AI_RETRY_MULTIPLIER:2.0}
   openai:
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-4o}

@@ -55,6 +55,32 @@ public class ChatSession {
         this.updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * AI가 추가 정보를 요청할 때 WAITING 상태로 전환.
+     * ACTIVE 상태에서만 호출 가능.
+     */
+    public void waitForUser() {
+        if (this.status != SessionStatus.ACTIVE) {
+            throw new IllegalStateException(
+                    "Cannot transition to WAITING from status: " + this.status);
+        }
+        this.status = SessionStatus.WAITING;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 사용자가 추가 정보를 제공하여 WAITING → ACTIVE로 복원.
+     * WAITING 상태에서만 호출 가능.
+     */
+    public void resume() {
+        if (this.status != SessionStatus.WAITING) {
+            throw new IllegalStateException(
+                    "Cannot resume from status: " + this.status);
+        }
+        this.status = SessionStatus.ACTIVE;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void updateTitle(String title) {
         this.title = title;
         this.updatedAt = LocalDateTime.now();

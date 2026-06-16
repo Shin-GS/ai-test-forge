@@ -36,13 +36,16 @@ public class ClaudeAiService implements AiService {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final String model;
+    private final AiRetryTemplate retryTemplate;
 
     public ClaudeAiService(
             @Value("${ai.claude.api-key}") String apiKey,
             @Value("${ai.claude.model:claude-sonnet-4-20250514}") String model,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AiRetryTemplate retryTemplate) {
         this.model = model;
         this.objectMapper = objectMapper;
+        this.retryTemplate = retryTemplate;
 
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
@@ -60,13 +63,16 @@ public class ClaudeAiService implements AiService {
     public AiChatResponse chat(List<ChatMessage> messages, List<ToolDefinition> tools) {
         try {
             ObjectNode requestBody = buildRequestBody(messages, tools);
+            String requestJson = objectMapper.writeValueAsString(requestBody);
 
-            String responseJson = restClient.post()
-                    .uri("/messages")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(objectMapper.writeValueAsString(requestBody))
-                    .retrieve()
-                    .body(String.class);
+            String responseJson = retryTemplate.execute(() ->
+                    restClient.post()
+                            .uri("/messages")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(requestJson)
+                            .retrieve()
+                            .body(String.class),
+                    "Claude");
 
             return parseResponse(responseJson);
         } catch (Exception e) {

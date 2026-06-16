@@ -51,6 +51,7 @@ public class AgentLoopService {
     private final SubdomainSpecRepository specRepository;
     private final SpecToolConverter specToolConverter;
     private final WorkspaceService workspaceService;
+    private final TwoStageFilterService twoStageFilterService;
 
     @Value("${agent-loop.max-iterations:20}")
     private int maxIterations;
@@ -111,8 +112,8 @@ public class AgentLoopService {
 
         try {
             chatService.addUserMessage(sessionId, userMessage);
-            // 새 루프 시작 — 상태 초기화
-            loopStates.put(sessionId, new LoopState(Instant.now(), 0));
+            // 새 루프 시작 — 상태 초기화 (2-Stage 필터용 userMessage 보존)
+            loopStates.put(sessionId, new LoopState(Instant.now(), 0, userMessage));
             processNextTurn(sessionId);
         } catch (Exception e) {
             log.error("Agent loop start failed for session {}: {}", sessionId, e.getMessage(), e);
@@ -169,6 +170,15 @@ public class AgentLoopService {
             // 워크스페이스 기반 tool 목록 필터링
             List<ToolDefinition> tools = buildToolsForSession(sessionId);
 
+            // 2-Stage 필터: 첫 번째 턴에서만 적용 (이후 턴은 이미 필터된 상태로 진행)
+            if (state != null && state.iterationCount() == 1 && state.userMessage() != null) {
+                tools = twoStageFilterService.filterToolsIfNeeded(state.userMessage(), tools);
+                state.setFilteredTools(tools);
+            } else if (state != null && state.filteredTools() != null) {
+                // 이후 턴에서는 첫 턴에서 필터된 tool 목록을 재사용
+                tools = state.filteredTools();
+            }
+
             // AI 호출
             AiChatResponse response = aiService.chat(history, tools);
 
@@ -178,13 +188,22 @@ public class AgentLoopService {
                 return;
             }
 
-            // 텍스트 응답만 있으면 완료
+            // 텍스트 응답만 있으면 → tool call 이력에 따라 COMPLETED 또는 WAITING 판정
             if (response.message() != null && !response.message().isBlank()) {
                 chatService.addAssistantMessage(sessionId, response.message());
                 sendSseEvent(sessionId, "message", Map.of("content", response.message()));
-                sendSseEvent(sessionId, "done", Map.of());
-                chatService.completeSession(sessionId);
-                completeEmitter(sessionId);
+
+                if (state != null && state.hasExecutedToolCall()) {
+                    // tool call을 수행한 적 있으면 → 작업 완료 보고
+                    sendSseEvent(sessionId, "done", Map.of());
+                    chatService.completeSession(sessionId);
+                    completeEmitter(sessionId);
+                } else {
+                    // tool call 없이 텍스트만 보냈으면 → 추가 정보 요청 (WAITING)
+                    sendSseEvent(sessionId, "done", Map.of());
+                    chatService.waitSession(sessionId);
+                    completeEmitter(sessionId);
+                }
             } else {
                 log.warn("Empty AI response for session {}", sessionId);
                 sendSseEvent(sessionId, "error", Map.of("message", "AI로부터 유효한 응답을 받지 못했습니다."));
@@ -237,6 +256,12 @@ public class AgentLoopService {
     private void handleToolCalls(Long sessionId, AiChatResponse response) {
         String assistantContent = response.message() != null ? response.message() : "";
         chatService.addAssistantMessage(sessionId, assistantContent);
+
+        // tool call을 수행했음을 기록
+        LoopState state = loopStates.get(sessionId);
+        if (state != null) {
+            state.markToolCallExecuted();
+        }
 
         List<ToolCall> toolCalls = response.toolCalls();
         if (toolCalls.size() > maxToolCallsPerTurn) {
@@ -344,16 +369,29 @@ public class AgentLoopService {
     private static class LoopState {
         private final Instant startedAt;
         private int iterationCount;
+        private boolean executedToolCall;
+        private final String userMessage;
+        private List<ToolDefinition> filteredTools;
         private final Map<String, Integer> failureTracker = new HashMap<>();
 
-        LoopState(Instant startedAt, int iterationCount) {
+        LoopState(Instant startedAt, int iterationCount, String userMessage) {
             this.startedAt = startedAt;
             this.iterationCount = iterationCount;
+            this.userMessage = userMessage;
+            this.executedToolCall = false;
         }
 
         Instant startedAt() { return startedAt; }
         int iterationCount() { return iterationCount; }
         void incrementIteration() { this.iterationCount++; }
+
+        String userMessage() { return userMessage; }
+
+        List<ToolDefinition> filteredTools() { return filteredTools; }
+        void setFilteredTools(List<ToolDefinition> tools) { this.filteredTools = tools; }
+
+        void markToolCallExecuted() { this.executedToolCall = true; }
+        boolean hasExecutedToolCall() { return this.executedToolCall; }
 
         /**
          * 실패를 기록하고, 동일 키로 3회 이상 실패 시 true 반환.

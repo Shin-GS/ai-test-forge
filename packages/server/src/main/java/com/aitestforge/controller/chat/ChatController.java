@@ -57,11 +57,14 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getMessages(sessionId));
     }
 
-    @Operation(summary = "메시지 전송", description = "사용자 메시지를 전송하고 Agent Loop를 시작합니다.")
+    @Operation(summary = "메시지 전송", description = "사용자 메시지를 전송하고 Agent Loop를 시작합니다. 세션이 WAITING 상태이면 자동으로 ACTIVE로 복원 후 재개합니다.")
     @PostMapping("/{sessionId}/messages")
     public ResponseEntity<Void> sendMessage(
             @Parameter(description = "세션 ID") @PathVariable Long sessionId,
             @Valid @RequestBody SendMessageRequest request) {
+        if (chatService.isWaiting(sessionId)) {
+            chatService.resumeSession(sessionId);
+        }
         agentLoopService.startLoop(sessionId, request.message());
         return ResponseEntity.accepted().build();
     }

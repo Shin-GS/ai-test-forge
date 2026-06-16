@@ -44,6 +44,10 @@ public class SubdomainSpec {
     @Column(name = "DESCRIPTION")
     private String description;
 
+    @Lob
+    @Column(name = "AUTH_PROFILES_JSON", columnDefinition = "TEXT")
+    private String authProfilesJson;
+
     @Column(name = "REGISTERED_AT", nullable = false)
     @Builder.Default
     private LocalDateTime registeredAt = LocalDateTime.now();
@@ -58,6 +62,13 @@ public class SubdomainSpec {
         this.baseUrl = baseUrl;
         this.lastHeartbeatAt = LocalDateTime.now();
         this.status = SpecStatus.ACTIVE;
+    }
+
+    /**
+     * 인증 프로필 메타 정보 갱신.
+     */
+    public void updateAuthProfiles(String authProfilesJson) {
+        this.authProfilesJson = authProfilesJson;
     }
 
     public void heartbeat() {
