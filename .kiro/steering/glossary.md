@@ -61,6 +61,28 @@ inclusion: always
 | 클라이언트 라이브러리 | 서브도메인 등록용 Spring Boot Starter | SDK, 플러그인 |
 | OpenAPI JSON | 서브도메인의 Swagger docs 엔드포인트에서 가져온 원본 JSON | Swagger 파일, API 문서 |
 
+## 레시피 용어
+
+| 용어 | 영문 | 설명 |
+|------|------|------|
+| 레시피 엔진 | Recipe Engine | 레시피를 파싱하고 step별 변수 치환, 스펙 검증, HTTP 호출, 결과 추출을 순차 수행하는 실행 엔진 |
+| 레시피 스텝 | Recipe Step | 레시피 내 하나의 API 호출 단위 (subdomain, method, path, body, extract) |
+| 바디 전략 | Body Strategy | step의 body 생성 방식 (fixed, gen, ai-generate, ai-fill) |
+| 선택 전략 | Select Strategy | 조회 결과에서 값을 선택하는 전략 (ai-pick) |
+| 변수 치환기 | Variable Resolver | 레시피 실행 시 `{{변수명}}`, `{{gen:*}}` 등을 실제 값으로 치환하는 모듈 |
+| 스펙 검증기 | Spec Validator | 레시피 실행 전 각 step의 API가 현재 스펙과 호환되는지 검증하는 모듈 |
+| 레시피 저장기 | Recipe Saver | 대화 이력(tool_call 히스토리)에서 레시피를 자동 생성하는 모듈 |
+
+## API 제어 용어
+
+| 용어 | 영문 | 설명 |
+|------|------|------|
+| API 제어 어노테이션 | TestForge Annotations | 서브도메인 서버의 어노테이션을 통해 AI 테스트 도구의 API 동작을 제어하는 메커니즘 |
+| 글로벌 규칙 | Global Rule | 메인 서버 설정으로 API를 일괄 제외/차단하는 관리자 규칙 |
+| 에이전트 러너 | Agent Runner | FE에서 에이전트 루프의 tool_call을 수신하고 서브도메인 API를 호출한 뒤 결과를 BE에 전달하는 브라우저 측 실행기 |
+| 인증 가드 | Auth Guard | 서브도메인 API 호출 시 인증 상태를 감시하고 401 발생 시 에이전트 루프를 일시정지하는 모듈 |
+| SSE 이벤트 버퍼 | SSE Event Buffer | SSE 연결 끊김 시 미전달 이벤트를 임시 보관하고 재연결 시 재전송하는 서버 측 버퍼 |
+
 ## 용어 사용 규칙
 
 1. 모든 에이전트는 이 용어를 동일하게 사용한다.

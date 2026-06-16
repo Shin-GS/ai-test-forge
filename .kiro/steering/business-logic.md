@@ -451,96 +451,182 @@ WORKSPACE_MAPPING: id, workspace_id, subdomain_name, environment
 ### 개념
 - 레시피 = "입사지원 데이터 생성"처럼 반복되는 멀티 API 호출 순서를 템플릿화한 것
 - 한번 대화로 만든 패턴을 저장해두고, 다음에 "이 레시피 실행해줘"로 즉시 재실행
-- 파라미터화 가능 (매번 다른 값 주입)
+- 사용자는 YAML 문법이나 내부 구조를 알 필요 없음 — 자연어 대화로만 생성/수정/실행
+- 실행 모드는 step의 body-strategy에 따라 자동 결정됨
 
-### 레시피 구조
+### 레시피 Step JSON 구조 (내부 저장 형식)
 
-```yaml
-name: "입사지원 데이터 생성"
-description: "회원 생성 → 이력서 생성 → 포지션에 지원"
-tags: [채용, 회원]
-steps:
-  - subdomain: user-service
-    api: POST /api/members
-    params: { email: "{{auto}}", name: "{{auto}}" }
-    output: memberId
-  - subdomain: resume-service
-    api: POST /api/resumes
-    params: { memberId: "{{memberId}}", title: "{{auto}}" }
-    output: resumeId
-  - subdomain: recruit-service
-    api: POST /api/applications
-    params: { positionId: "{{input:포지션ID}}", resumeId: "{{resumeId}}" }
+```json
+[
+  {
+    "name": "회원 생성",
+    "subdomain": "user-service",
+    "environment": "dev",
+    "method": "POST",
+    "path": "/api/members",
+    "bodyStrategy": "gen",
+    "body": { "email": "{{gen:email}}", "name": "{{gen:koreanName}}" },
+    "aiHint": null,
+    "selectStrategy": null,
+    "extract": { "memberId": "$.data.id" }
+  }
+]
 ```
 
-변수 타입:
-- `{{auto}}`: AI가 자동 생성
-- `{{input:라벨}}`: 실행 시 사용자에게 물어봄
-- `{{이전step_output}}`: 이전 단계 결과 참조
+### 변수 시스템
 
-### 저장 위치
-- 기본: 메인 서버 DB (레시피 CRUD API 제공)
-- 확장: 레시피 소스 인터페이스로 외부 연동 가능
+| 패턴 | 설명 | AI 호출 |
+|------|------|---------|
+| `{{gen:email}}` | 규칙 기반 자동 생성 (test_xxx@test.com) | ❌ |
+| `{{gen:koreanName}}` | 랜덤 한국어 이름 | ❌ |
+| `{{gen:phone}}` | 010-XXXX-XXXX | ❌ |
+| `{{gen:uuid}}` | UUID v4 | ❌ |
+| `{{gen:number}}` | 1~9999 랜덤 정수 | ❌ |
+| `{{gen:date}}` | 오늘 ±30일 yyyy-MM-dd | ❌ |
+| `{{변수명}}` | 이전 step의 extract 결과 참조 | ❌ |
+| input 변수 | 실행 시 사용자에게 입력받음 | ❌ |
 
-### 레시피 소스 인터페이스 (확장)
+### Body Strategy (step별 body 생성 방식)
 
-```java
-public interface RecipeSource {
-    List<Recipe> getAll();
-    Optional<Recipe> getByName(String name);
-}
+| 전략 | 설명 | AI 호출 | 토큰 |
+|------|------|---------|------|
+| fixed | body가 레시피에 고정됨 (변수 치환만) | ❌ | 0 |
+| gen | 규칙 기반 생성자 사용 | ❌ | 0 |
+| ai-generate | AI가 해당 API 스키마 기반으로 body 전체 생성 | ✅ | ~500-1000 |
+| ai-fill | 고정 필드는 유지, 빈 필드만 AI가 채움 | ✅ | ~300-500 |
+
+### Select Strategy
+
+| 전략 | 설명 | AI 호출 |
+|------|------|---------|
+| ai-pick | GET 결과 목록에서 AI가 aiHint 조건에 맞는 항목 선택 | ✅ |
+
+### Extract (JSONPath 기반)
+
+각 step의 HTTP 응답에서 JSONPath로 값을 추출하여 변수에 저장:
+```json
+"extract": { "memberId": "$.data.id", "email": "$.data.email" }
+```
+후속 step에서 `{{memberId}}`로 참조 가능.
+
+### 레시피 생성 방법
+
+**방법 1: 대화 이력 기반 저장**
+```
+사용자: "입사지원 데이터 만들어줘" (일반 대화로 실행)
+AI: (Agent Loop 실행 완료)
+사용자: "방금 한 거 레시피로 저장해줘"
+AI: 이 대화에서 실행한 작업 목록을 표시하고 범위 선택 요청
+→ 사용자 승인 후 DB 저장
 ```
 
-구현체 (선택적 추가):
-- `LocalRecipeSource` — DB (기본, 항상 활성)
-- `JiraRecipeSource` — Jira 이슈에서 레시피 추출
-- `NotionRecipeSource` — Notion 페이지에서 추출
-- `FileRecipeSource` — YAML 파일에서 로드
-
-### 사용 방식
-
-**실행:**
+**방법 2: 자연어 직접 정의**
 ```
-사용자: "입사지원 레시피 실행해줘"
-AI: 포지션 ID를 알려주세요. ({{input:포지션ID}} 변수)
-사용자: "123"
-AI: ✅ 레시피 실행 완료
-    - 회원 생성 (ID: 456)
-    - 이력서 생성 (ID: 789)
-    - 포지션 123에 지원 완료 (ID: 1011)
+사용자: "회원 만들고 이력서 생성해서 지원하는 레시피 만들어줘"
+AI: step 목록 구성 → 사용자 확인 → 저장
 ```
 
-**저장:**
-```
-사용자: "방금 한 작업을 레시피로 저장해줘"
-AI: 레시피 이름을 뭘로 할까요?
-사용자: "입사지원 데이터 생성"
-AI: ✅ 레시피 저장 완료 (3단계, 변수 1개)
-```
-
-### 레시피 vs 직접 대화
-
-| 상황 | 추천 | AI 토큰 비용 |
-|------|------|-------------|
-| 처음 해보는 시나리오 | 직접 대화 (AI가 의존관계 파악) | 높음 (의도 파악 + API 선별 + 실행) |
-| 반복되는 시나리오 | 레시피 실행 (빠르고 일관됨) | **거의 0** (AI 비호출, 직접 실행) |
-| 약간 다른 변형 | 레시피 실행 후 추가 대화로 수정 | 낮음 (추가 부분만 AI) |
-
-### 레시피 실행 = AI 비호출
-
-레시피 실행 시에는 AI Agent Loop를 거치지 않고, 저장된 단계를 순차적으로 직접 실행:
+### 레시피 실행 플로우
 
 ```
-[일반 대화]   사용자 → AI 의도파악(토큰) → API 필터(토큰) → 실행루프(토큰) = 비용 큼
-[레시피 실행] 사용자 → 변수 확인 → 저장된 단계 순차 실행 = 비용 거의 0
+1. 사용자 "레시피 실행" 요청
+2. input 변수 입력 (있으면)
+3. 스펙 검증 — 각 step의 API가 현재 스펙과 호환되는지 확인
+   - VALID: 바로 실행
+   - WARN: 경고 표시 + 실행 여부 확인
+   - BROKEN: 실행 차단 + "AI로 자동 수정" 옵션 제공
+4. step 순차 실행:
+   - bodyStrategy에 따라 AI 호출 여부 자동 결정
+   - FE가 서브도메인 API 직접 호출 (브라우저 쿠키 활용)
+   - 응답에서 JSONPath extract → 다음 step에서 참조
+5. 진행 상태 실시간 표시 (SSE step_progress 이벤트)
+6. 완료 → 결과 요약 표시
 ```
 
-- 변수(`{{input:...}}`) 부분만 사용자에게 물어봄 (AI 불필요, 단순 프롬프트)
-- `{{auto}}` 변수는 규칙 기반 생성 (랜덤 이메일, 이름 등 — AI 불필요)
-- API 호출 순서/파라미터는 레시피에 이미 정의되어 있으므로 AI 판단 불필요
-- 실패 시에만 AI에게 복구 판단 위임 (선택적)
+### 레시피 공유
+
+- **기본 공개 범위**: PUBLIC (팀 도구이므로 전체 공유가 기본)
+- PRIVATE 설정 가능 (본인만 보고 실행)
+- 수정/삭제는 owner만 가능
+- 다른 사람의 레시피를 수정하고 싶으면 "복제" 후 수정
+
+### 레시피 자동 제안
+
+사용자가 채팅으로 작업 요청 시 유사한 기존 레시피가 있으면 제안:
+```
+사용자: "입사지원 데이터 만들어줘"
+AI: 📋 "입사지원 데이터 생성" 레시피가 있습니다.
+    [레시피로 실행 (빠름)] [새로 대화로 진행]
+```
+
+### 토큰 비용 비교
+
+```
+일반 대화:      전체 API 스펙 전달 + 의도 파악 + 실행 루프 = 10,000~15,000 tokens
+AI-Assisted:   해당 step API 스키마만 전달 = 1,000~2,000 tokens
+Direct 레시피:  AI 호출 없음 = 0 tokens
+```
 
 ### 미결정 사항
-- 레시피 버전 관리 (API 변경 시 레시피 깨짐 대응)
-- 레시피 공유 방식 (export/import, 팀 간 공유)
 - 레시피 실행 실패 시 중간 롤백 여부
+- 레시피 소스 인터페이스 확장 (Jira, Notion 등)
+
+## 13. API 제어 어노테이션
+
+서브도메인 개발자가 코드 레벨에서 특정 API의 AI 테스트 도구 동작을 제어하는 메커니즘.
+
+### 어노테이션 목록
+
+| 어노테이션 | 동작 | AI 가시성 | 실행 가능 |
+|-----------|------|-----------|-----------|
+| `@TestForgeExclude` | AI에게 완전히 숨김 | ❌ | ❌ |
+| `@TestForgeBlock` | AI에게 보이지만 실행 차단 + 사유 안내 | ✅ | ❌ |
+| `@TestForgeConfirm` | 실행 전 사용자 확인 | ✅ | ✅ (승인 후) |
+| `@TestForgeReadOnly` | 확인 없이 즉시 실행 (안전 표시) | ✅ | ✅ |
+| `@TestForgeHint` | AI에게 추가 맥락 제공 | ✅ + 힌트 | ✅ |
+| `@TestForgeGroup` | 2-Stage 필터링용 그룹핑 | ✅ | ✅ |
+
+### 동작 원리
+
+```
+[서브도메인 서버]
+  @TestForgeBlock(reason = "실 결제 발생")
+  @PostMapping("/api/payments/charge")
+      │
+      ▼ (springdoc OperationCustomizer)
+[OpenAPI JSON]
+  x-test-forge-block: { "reason": "실 결제 발생" }
+      │
+      ▼ (Push to 메인 서버)
+[메인 서버] SpecControlFilter가 파싱
+      │
+      ▼
+[Agent Loop] AI tool 목록에 포함하되 description에 [BLOCKED: reason] 추가
+      │
+      ▼ (AI가 호출 시도)
+[FE Agent Runner] 호출 차단 + 사유 표시 + BE에 실패 전달
+```
+
+### 우선순위 규칙
+- 글로벌 제외(application.yml) > @TestForgeExclude > @TestForgeBlock > @TestForgeConfirm > @TestForgeReadOnly
+- Block > ReadOnly (둘 다 있으면 Block 적용)
+- ReadOnly > Confirm (둘 다 있으면 확인 스킵)
+
+### 글로벌 제외 규칙
+
+관리자가 메인 서버 설정으로 일괄 제어:
+```yaml
+spec-registry:
+  global-exclude:
+    methods: [DELETE]
+    path-patterns: ["**/admin/**", "**/internal/**"]
+    tags: ["deprecated"]
+```
+
+### 비-Java 서버
+
+어노테이션 없이 OpenAPI JSON에 `x-test-forge-*` 확장 필드를 직접 작성하면 동일 동작:
+```json
+{ "x-test-forge-block": { "reason": "실 결제 발생" } }
+```
+
