@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { RecipeResponse, RecipeStep } from '@/types/recipe'
 import { deleteRecipe } from '@/services/recipeApi'
+import { useChatStore } from '@/stores/useChatStore'
 
 interface RecipeCardProps {
   recipe: RecipeResponse
@@ -24,6 +25,8 @@ function RecipeCard({ recipe }: RecipeCardProps) {
   const variableCount = countVariables(steps)
 
   const handleRun = () => {
+    // 변수가 없는 레시피는 바로 실행, 변수 입력 UI는 추후 구현
+    useChatStore.getState().executeRecipe(recipe.id, recipe.name, {})
     navigate('/')
   }
 

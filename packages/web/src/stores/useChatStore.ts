@@ -12,6 +12,7 @@ import {
   sendMessage,
   connectStream,
 } from '@/services/chatApi'
+import { executeRecipeStream } from '@/services/recipeApi'
 
 interface ChatState {
   // 세션
@@ -28,11 +29,15 @@ interface ChatState {
   // SSE 연결
   eventSource: EventSource | null
 
+  // 레시피 실행
+  recipeAbortController: AbortController | null
+
   // 액션
   fetchSessions: () => Promise<void>
   setActiveSession: (sessionId: number) => Promise<void>
   startNewChat: (message: string) => Promise<void>
   sendUserMessage: (message: string) => Promise<void>
+  executeRecipe: (recipeId: number, recipeName: string, variables: Record<string, string>) => Promise<void>
   handleSseEvent: (event: SseEvent) => void
   disconnectStream: () => void
   reset: () => void
@@ -45,6 +50,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isLoading: false,
   toolCalls: [],
   eventSource: null,
+  recipeAbortController: null,
 
   fetchSessions: async () => {
     try {
@@ -158,6 +164,60 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
+  executeRecipe: async (recipeId: number, recipeName: string, variables: Record<string, string>) => {
+    // 기존 연결 정리
+    get().disconnectStream()
+    const { recipeAbortController } = get()
+    if (recipeAbortController) {
+      recipeAbortController.abort()
+    }
+
+    // 채팅 화면으로 전환: 세션 해제 + 시스템 메시지 표시
+    const systemMsg: MessageResponse = {
+      id: Date.now(),
+      sessionId: 0,
+      role: 'SYSTEM',
+      content: `📋 레시피 '${recipeName}' 실행`,
+      createdAt: new Date().toISOString(),
+    }
+
+    set({
+      activeSessionId: null,
+      messages: [systemMsg],
+      isLoading: true,
+      toolCalls: [],
+      recipeAbortController: null,
+    })
+
+    try {
+      const controller = await executeRecipeStream(recipeId, variables, {
+        onEvent: (event) => {
+          get().handleSseEvent(event)
+        },
+        onDone: () => {
+          set({ isLoading: false, recipeAbortController: null })
+        },
+        onError: (error) => {
+          const errorMsg: MessageResponse = {
+            id: Date.now(),
+            sessionId: 0,
+            role: 'ASSISTANT',
+            content: `❌ 레시피 실행 실패: ${error.message}`,
+            createdAt: new Date().toISOString(),
+          }
+          set((state) => ({
+            messages: [...state.messages, errorMsg],
+            isLoading: false,
+            recipeAbortController: null,
+          }))
+        },
+      })
+      set({ recipeAbortController: controller })
+    } catch {
+      set({ isLoading: false, recipeAbortController: null })
+    }
+  },
+
   handleSseEvent: (event: SseEvent) => {
     switch (event.type) {
       case 'message': {
@@ -215,10 +275,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   disconnectStream: () => {
-    const { eventSource } = get()
+    const { eventSource, recipeAbortController } = get()
     if (eventSource) {
       eventSource.close()
       set({ eventSource: null })
+    }
+    if (recipeAbortController) {
+      recipeAbortController.abort()
+      set({ recipeAbortController: null })
     }
   },
 
@@ -230,6 +294,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: [],
       isLoading: false,
       toolCalls: [],
+      recipeAbortController: null,
     })
   },
 }))
