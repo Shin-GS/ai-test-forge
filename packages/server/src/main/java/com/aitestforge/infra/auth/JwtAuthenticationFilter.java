@@ -43,10 +43,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest request) {
+        // 1. Authorization 헤더에서 추출 (일반 API 요청)
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             return header.substring(7);
         }
+
+        // 2. Query parameter에서 추출 (SSE EventSource는 커스텀 헤더 미지원)
+        String queryToken = request.getParameter("token");
+        if (queryToken != null && !queryToken.isBlank()) {
+            return queryToken;
+        }
+
         return null;
     }
 }
