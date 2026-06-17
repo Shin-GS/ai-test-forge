@@ -525,6 +525,12 @@ function SettingsPage() {
         {/* 워크스페이스 섹션 (첫 번째) */}
         <WorkspaceSection />
 
+        {/* AI 설정 섹션 */}
+        <AiSettingsSection />
+
+        {/* Agent Loop 설정 섹션 */}
+        <AgentLoopSection />
+
         {/* 계정 정보 섹션 */}
         <section className="mb-8">
           <h2 className="mb-4 border-b border-[var(--color-border)] pb-2 text-lg font-semibold">
@@ -562,12 +568,6 @@ function SettingsPage() {
             </Button>
           </div>
         </section>
-
-        {/* AI 설정 섹션 */}
-        <AiSettingsSection />
-
-        {/* Agent Loop 설정 섹션 */}
-        <AgentLoopSection />
       </div>
     </div>
   )
