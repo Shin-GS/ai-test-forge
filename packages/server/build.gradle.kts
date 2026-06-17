@@ -23,6 +23,9 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
+
+    // OTP (TOTP)
+    implementation("dev.samstevens.totp:totp:1.7.1")
 }
 
 tasks.withType<Test> {

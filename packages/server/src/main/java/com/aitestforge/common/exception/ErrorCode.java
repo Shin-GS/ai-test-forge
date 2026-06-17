@@ -13,7 +13,10 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND("E003", "리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     AGENT_LOOP_CONCURRENT_LIMIT("E004", "동시 실행 한도를 초과하였습니다. 잠시 후 다시 시도해 주세요.", HttpStatus.TOO_MANY_REQUESTS),
     FORBIDDEN("E005", "접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
-    PASSWORD_MISMATCH("E006", "현재 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
+    PASSWORD_MISMATCH("E006", "현재 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
+    OTP_ALREADY_ENABLED("E007", "OTP가 이미 활성화되어 있습니다.", HttpStatus.CONFLICT),
+    OTP_NOT_ENABLED("E008", "OTP가 활성화되어 있지 않습니다.", HttpStatus.BAD_REQUEST),
+    OTP_INVALID_CODE("E009", "유효하지 않은 OTP 코드입니다.", HttpStatus.UNAUTHORIZED);
 
     private final String code;
     private final String message;

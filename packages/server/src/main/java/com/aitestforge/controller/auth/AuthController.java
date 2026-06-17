@@ -19,7 +19,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "로그인", description = "이메일과 비밀번호로 로그인하여 JWT 토큰을 발급받습니다.")
+    @Operation(summary = "로그인", description = "이메일과 비밀번호로 로그인하여 JWT 토큰을 발급받습니다. OTP 활성화 유저는 otpRequired=true를 반환합니다.")
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
@@ -44,5 +44,35 @@ public class AuthController {
             @Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(user, request);
         return ResponseEntity.noContent().build();
+    }
+
+    // --- OTP 엔드포인트 ---
+
+    @Operation(summary = "OTP 설정", description = "TOTP secret을 생성하고 QR 코드용 otpauth:// URI를 반환합니다.")
+    @PostMapping("/otp/setup")
+    public ResponseEntity<OtpSetupResponse> setupOtp(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(authService.setupOtp(user));
+    }
+
+    @Operation(summary = "OTP 검증 및 활성화", description = "사용자가 입력한 OTP 코드를 검증하고, 성공 시 OTP를 활성화합니다.")
+    @PostMapping("/otp/verify")
+    public ResponseEntity<Void> verifyOtp(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody OtpVerifyRequest request) {
+        authService.verifyOtp(user, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "OTP 비활성화", description = "OTP 2단계 인증을 비활성화합니다.")
+    @DeleteMapping("/otp")
+    public ResponseEntity<Void> disableOtp(@AuthenticationPrincipal User user) {
+        authService.disableOtp(user);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "OTP 로그인", description = "OTP 활성화 유저가 이메일과 OTP 코드로 최종 인증하여 토큰을 발급받습니다.")
+    @PostMapping("/otp/login")
+    public ResponseEntity<LoginResponse> otpLogin(@Valid @RequestBody OtpLoginRequest request) {
+        return ResponseEntity.ok(authService.otpLogin(request));
     }
 }

@@ -27,6 +27,13 @@ public class User {
     @Column(name = "NAME", nullable = false)
     private String name;
 
+    @Column(name = "OTP_SECRET")
+    private String otpSecret;
+
+    @Column(name = "OTP_ENABLED", nullable = false)
+    @Builder.Default
+    private boolean otpEnabled = false;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "ROLE", nullable = false)
     @Builder.Default
@@ -38,5 +45,19 @@ public class User {
 
     public void changePassword(String encodedPassword) {
         this.password = encodedPassword;
+    }
+
+    public void enableOtp(String secret) {
+        this.otpSecret = secret;
+        this.otpEnabled = true;
+    }
+
+    public void disableOtp() {
+        this.otpSecret = null;
+        this.otpEnabled = false;
+    }
+
+    public void setOtpSecret(String otpSecret) {
+        this.otpSecret = otpSecret;
     }
 }
