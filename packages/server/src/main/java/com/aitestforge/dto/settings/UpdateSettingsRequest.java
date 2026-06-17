@@ -30,5 +30,8 @@ public record UpdateSettingsRequest(
         @Schema(description = "Agent Loop 타임아웃 초 (10~600)", example = "120")
         @Min(10)
         @Max(600)
-        int timeoutSeconds
+        int timeoutSeconds,
+
+        @Schema(description = "다음 액션 힌트 활성화 여부", example = "false")
+        boolean nextActionHintEnabled
 ) {}

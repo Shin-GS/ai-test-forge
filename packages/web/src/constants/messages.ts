@@ -86,6 +86,8 @@ export const MESSAGES = {
       providerDescription: 'AI 모델 제공자',
       modelLabel: 'Model',
       modelDescription: '사용할 AI 모델명',
+      nextActionLabel: '다음 액션 힌트',
+      nextActionDescription: 'AI 결과 후 추천 액션을 표시합니다',
       loading: 'AI 설정을 불러오는 중...',
       loadError: 'AI 설정을 불러올 수 없습니다.',
     },

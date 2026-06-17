@@ -17,5 +17,8 @@ public record SettingsResponse(
         int maxToolCallsPerTurn,
 
         @Schema(description = "Agent Loop 타임아웃 (초)", example = "120")
-        int timeoutSeconds
+        int timeoutSeconds,
+
+        @Schema(description = "다음 액션 힌트 활성화 여부", example = "false")
+        boolean nextActionHintEnabled
 ) {}

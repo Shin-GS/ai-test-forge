@@ -6,6 +6,7 @@ export interface SettingsResponse {
   maxIterations: number
   maxToolCallsPerTurn: number
   timeoutSeconds: number
+  nextActionHintEnabled: boolean
 }
 
 export interface UpdateSettingsRequest {
@@ -14,6 +15,7 @@ export interface UpdateSettingsRequest {
   maxIterations: number
   maxToolCallsPerTurn: number
   timeoutSeconds: number
+  nextActionHintEnabled: boolean
 }
 
 export async function getSettings(): Promise<SettingsResponse> {

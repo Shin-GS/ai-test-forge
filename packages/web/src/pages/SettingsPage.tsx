@@ -277,6 +277,7 @@ function AiSettingsSection() {
         maxIterations: settings.maxIterations,
         maxToolCallsPerTurn: settings.maxToolCallsPerTurn,
         timeoutSeconds: settings.timeoutSeconds,
+        nextActionHintEnabled: settings.nextActionHintEnabled,
       })
     },
     [settings, updateMutation],
@@ -364,6 +365,43 @@ function AiSettingsSection() {
         />
       </div>
 
+      {/* 다음 액션 힌트 */}
+      <div className="flex items-center justify-between border-t border-[var(--color-border)] py-3">
+        <div>
+          <div className="text-sm font-medium">{MESSAGES.settings.ai.nextActionLabel}</div>
+          <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
+            {MESSAGES.settings.ai.nextActionDescription}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (!settings) return
+            updateMutation.mutate({
+              aiProvider: provider,
+              aiModel: model,
+              maxIterations: settings.maxIterations,
+              maxToolCallsPerTurn: settings.maxToolCallsPerTurn,
+              timeoutSeconds: settings.timeoutSeconds,
+              nextActionHintEnabled: !settings.nextActionHintEnabled,
+            })
+          }}
+          className={`relative h-6 w-11 rounded-full transition-colors ${
+            settings?.nextActionHintEnabled
+              ? 'bg-[var(--color-accent)]'
+              : 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border)]'
+          }`}
+          role="switch"
+          aria-checked={settings?.nextActionHintEnabled ?? false}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+              settings?.nextActionHintEnabled ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+
       {/* 저장 상태 표시 */}
       {updateMutation.isPending && (
         <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
@@ -421,6 +459,7 @@ function AgentLoopSection() {
       maxIterations,
       maxToolCallsPerTurn: maxToolCalls,
       timeoutSeconds: timeout,
+      nextActionHintEnabled: settings.nextActionHintEnabled,
     })
   }
 

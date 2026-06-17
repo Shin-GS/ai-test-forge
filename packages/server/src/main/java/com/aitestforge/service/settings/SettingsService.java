@@ -21,6 +21,7 @@ public class SettingsService {
     private volatile int maxIterations;
     private volatile int maxToolCallsPerTurn;
     private volatile int timeoutSeconds;
+    private volatile boolean nextActionHintEnabled;
 
     public SettingsService(
             @Value("${ai.provider:mock}") String aiProvider,
@@ -33,6 +34,7 @@ public class SettingsService {
         this.maxIterations = maxIterations;
         this.maxToolCallsPerTurn = maxToolCallsPerTurn;
         this.timeoutSeconds = timeoutSeconds;
+        this.nextActionHintEnabled = false;
     }
 
     public SettingsResponse getSettings() {
@@ -41,7 +43,8 @@ public class SettingsService {
                 aiModel,
                 maxIterations,
                 maxToolCallsPerTurn,
-                timeoutSeconds
+                timeoutSeconds,
+                nextActionHintEnabled
         );
     }
 
@@ -51,16 +54,18 @@ public class SettingsService {
         this.maxIterations = request.maxIterations();
         this.maxToolCallsPerTurn = request.maxToolCallsPerTurn();
         this.timeoutSeconds = request.timeoutSeconds();
+        this.nextActionHintEnabled = request.nextActionHintEnabled();
 
-        log.info("Settings updated: provider={}, model={}, maxIterations={}, maxToolCallsPerTurn={}, timeoutSeconds={}",
-                aiProvider, aiModel, maxIterations, maxToolCallsPerTurn, timeoutSeconds);
+        log.info("Settings updated: provider={}, model={}, maxIterations={}, maxToolCallsPerTurn={}, timeoutSeconds={}, nextActionHint={}",
+                aiProvider, aiModel, maxIterations, maxToolCallsPerTurn, timeoutSeconds, nextActionHintEnabled);
 
         return new SettingsResponse(
                 aiProvider,
                 aiModel,
                 maxIterations,
                 maxToolCallsPerTurn,
-                timeoutSeconds
+                timeoutSeconds,
+                nextActionHintEnabled
         );
     }
 }
