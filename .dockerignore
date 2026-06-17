@@ -1,0 +1,11 @@
+.git
+.gradle
+.idea
+.vscode
+.kiro
+build
+**/build
+**/dist
+**/node_modules
+.env
+*.log

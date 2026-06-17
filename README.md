@@ -137,6 +137,17 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 
 브라우저에서 `http://localhost:5173` 접속 → 위 계정으로 로그인 → 채팅 시작!
 
+### Docker Compose (원클릭)
+
+```bash
+docker compose up -d
+# MySQL + Server + Web이 한 번에 구동됩니다.
+# http://localhost:5173 접속 후 계정 생성:
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@test.com","password":"admin1234","name":"관리자"}'
+```
+
 ---
 
 ## 🔌 서브도메인 서버 연동
