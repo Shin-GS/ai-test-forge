@@ -267,8 +267,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
 
       case 'error': {
+        // active 상태인 toolCall을 error로 변경
+        const updatedToolCalls = get().toolCalls.map((tc) =>
+          tc.status === 'active' ? { ...tc, status: 'error' as const } : tc
+        )
+
+        // 에러 메시지를 AI 역할로 추가
+        const errorMessage: MessageResponse = {
+          id: Date.now(),
+          role: 'ASSISTANT',
+          content: `❌ ${event.message}`,
+          toolCallId: null,
+          createdAt: new Date().toISOString(),
+        }
+
         get().disconnectStream()
-        set({ isLoading: false })
+        set((state) => ({
+          messages: [...state.messages, errorMessage],
+          toolCalls: updatedToolCalls,
+          isLoading: false,
+        }))
         break
       }
     }

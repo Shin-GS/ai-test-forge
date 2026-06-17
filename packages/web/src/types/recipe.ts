@@ -19,3 +19,12 @@ export interface RecipeStep {
   params: Record<string, string>
   output?: string
 }
+
+export interface UpdateRecipeRequest {
+  name: string
+  description: string
+  tags: string[]
+  stepsJson: string
+  visibility: 'PUBLIC' | 'PRIVATE'
+  variablesJson: string | null
+}

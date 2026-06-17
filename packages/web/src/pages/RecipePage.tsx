@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { getRecipes, deleteRecipe } from '@/services/recipeApi'
+import { getRecipes, deleteRecipe, updateRecipe } from '@/services/recipeApi'
 import { useChatStore } from '@/stores/useChatStore'
 import RecipeCard from '@/components/recipe/RecipeCard'
 import { Button } from '@/components/ui'
 import { MESSAGES } from '@/constants'
-import type { RecipeResponse, RecipeStep } from '@/types/recipe'
+import type { RecipeResponse, RecipeStep, UpdateRecipeRequest } from '@/types/recipe'
 
 function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -242,6 +242,48 @@ function RecipeDetailPanel({
   isDeleting,
 }: RecipeDetailPanelProps) {
   const steps = parseStepsJson(recipe.stepsJson)
+  const queryClient = useQueryClient()
+
+  // 편집 모드 상태
+  const [isEditing, setIsEditing] = useState(false)
+  const [editName, setEditName] = useState(recipe.name)
+  const [editDescription, setEditDescription] = useState(recipe.description)
+  const [editTags, setEditTags] = useState(recipe.tags.join(', '))
+
+  const updateMutation = useMutation({
+    mutationFn: (data: UpdateRecipeRequest) => updateRecipe(recipe.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recipes'] })
+      setIsEditing(false)
+    },
+  })
+
+  const handleEditStart = () => {
+    setEditName(recipe.name)
+    setEditDescription(recipe.description)
+    setEditTags(recipe.tags.join(', '))
+    setIsEditing(true)
+  }
+
+  const handleEditCancel = () => {
+    setIsEditing(false)
+  }
+
+  const handleEditSave = () => {
+    const tags = editTags
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+
+    updateMutation.mutate({
+      name: editName,
+      description: editDescription,
+      tags,
+      stepsJson: recipe.stepsJson,
+      visibility: recipe.visibility,
+      variablesJson: recipe.variablesJson,
+    })
+  }
 
   return (
     <div className="flex-1 overflow-y-auto p-6">
@@ -256,28 +298,73 @@ function RecipeDetailPanel({
         </button>
 
         {/* 레시피명 + 설명 */}
-        <h2 className="mb-2 text-xl font-bold text-[var(--color-text-primary)]">
-          📋 {recipe.name}
-        </h2>
-        <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-          {recipe.description}
-        </p>
+        {isEditing ? (
+          <div className="mb-4 flex flex-col gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--color-text-tertiary)]">
+                레시피명
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] focus:outline-none"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="레시피 이름"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--color-text-tertiary)]">
+                설명
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] focus:outline-none"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="레시피 설명"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--color-text-tertiary)]">
+                태그 (콤마로 구분)
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] focus:outline-none"
+                value={editTags}
+                onChange={(e) => setEditTags(e.target.value)}
+                placeholder="채용, 회원, 결제"
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            <h2 className="mb-2 text-xl font-bold text-[var(--color-text-primary)]">
+              📋 {recipe.name}
+            </h2>
+            <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
+              {recipe.description}
+            </p>
+          </>
+        )}
 
-        {/* 태그 + 메타 정보 */}
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          {recipe.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-[var(--color-bg-tertiary)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]"
-            >
-              #{tag}
+        {/* 태그 + 메타 정보 (보기 모드에서만) */}
+        {!isEditing && (
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            {recipe.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-[var(--color-bg-tertiary)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]"
+              >
+                #{tag}
+              </span>
+            ))}
+            <span className="text-xs text-[var(--color-text-tertiary)]">
+              총 {recipe.usageCount}회 사용
+              {recipe.lastUsedAt && ` · 마지막 사용: ${formatDate(recipe.lastUsedAt)}`}
             </span>
-          ))}
-          <span className="text-xs text-[var(--color-text-tertiary)]">
-            총 {recipe.usageCount}회 사용
-            {recipe.lastUsedAt && ` · 마지막 사용: ${formatDate(recipe.lastUsedAt)}`}
-          </span>
-        </div>
+          </div>
+        )}
 
         {/* 생성일 */}
         <div className="mb-4 text-xs text-[var(--color-text-tertiary)]">
@@ -322,19 +409,54 @@ function RecipeDetailPanel({
           })}
         </div>
 
+        {/* 저장 에러 표시 */}
+        {updateMutation.isError && (
+          <div className="mb-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
+            {updateMutation.error instanceof Error
+              ? updateMutation.error.message
+              : '레시피 수정에 실패했습니다.'}
+          </div>
+        )}
+
         {/* 액션 버튼 */}
         <div className="flex gap-2">
-          <Button variant="primary" size="md" onClick={() => onRun(recipe)}>
-            ▶ 실행
-          </Button>
-          <Button
-            variant="danger"
-            size="md"
-            disabled={isDeleting}
-            onClick={() => onDelete(recipe)}
-          >
-            {isDeleting ? '삭제 중...' : '삭제'}
-          </Button>
+          {isEditing ? (
+            <>
+              <Button
+                variant="primary"
+                size="md"
+                disabled={updateMutation.isPending}
+                onClick={handleEditSave}
+              >
+                {updateMutation.isPending ? '저장 중...' : '저장'}
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                disabled={updateMutation.isPending}
+                onClick={handleEditCancel}
+              >
+                취소
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="primary" size="md" onClick={() => onRun(recipe)}>
+                ▶ 실행
+              </Button>
+              <Button variant="secondary" size="md" onClick={handleEditStart}>
+                수정
+              </Button>
+              <Button
+                variant="danger"
+                size="md"
+                disabled={isDeleting}
+                onClick={() => onDelete(recipe)}
+              >
+                {isDeleting ? '삭제 중...' : '삭제'}
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

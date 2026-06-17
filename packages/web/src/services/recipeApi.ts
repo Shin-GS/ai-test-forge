@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/stores/useAuthStore'
-import type { RecipeResponse } from '@/types/recipe'
+import type { RecipeResponse, UpdateRecipeRequest } from '@/types/recipe'
 import type { SseEvent } from '@/types/chat'
 
 const API_BASE = '/api/v1'
@@ -34,6 +34,23 @@ export async function deleteRecipe(id: number): Promise<void> {
   if (!res.ok) {
     throw new Error('레시피 삭제에 실패했습니다.')
   }
+}
+
+export async function updateRecipe(
+  id: number,
+  data: UpdateRecipeRequest,
+): Promise<RecipeResponse> {
+  const res = await fetch(`${API_BASE}/recipes/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+
+  if (!res.ok) {
+    throw new Error('레시피 수정에 실패했습니다.')
+  }
+
+  return res.json()
 }
 
 /**
