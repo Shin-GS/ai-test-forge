@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { getRecipes } from '@/services/recipeApi'
 import RecipeCard from '@/components/recipe/RecipeCard'
+import { Button } from '@/components/ui'
 
 function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -75,13 +76,13 @@ function RecipePage() {
           <p className="mb-4 max-w-[400px] text-sm text-[var(--color-text-secondary)]">
             채팅에서 작업 후 "레시피로 저장해줘"라고 말해보세요.
           </p>
-          <button
-            type="button"
-            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
+          <Button
+            variant="primary"
+            size="md"
             onClick={() => navigate('/')}
           >
             💬 채팅으로 이동
-          </button>
+          </Button>
         </div>
       </div>
     )

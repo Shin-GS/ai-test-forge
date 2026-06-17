@@ -8,6 +8,7 @@ import {
   deleteWorkspace,
 } from '@/services/workspaceApi'
 import type { WorkspaceResponse } from '@/types/workspace'
+import { Button, Input } from '@/components/ui'
 
 function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
   const queryClient = useQueryClient()
@@ -158,42 +159,42 @@ function WorkspaceSection() {
       {/* 새 워크스페이스 생성 */}
       {isCreating ? (
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="워크스페이스 이름"
             autoFocus
-            className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)]"
+            className="flex-1"
           />
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleCreate}
             disabled={!newName.trim() || createMutation.isPending}
-            className="cursor-pointer rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-sm text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {createMutation.isPending ? '생성 중...' : '확인'}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setIsCreating(false)
               setNewName('')
             }}
-            className="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
           >
             취소
-          </button>
+          </Button>
         </div>
       ) : (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => setIsCreating(true)}
-          className="cursor-pointer rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
         >
           + 새 워크스페이스
-        </button>
+        </Button>
       )}
 
       {/* 생성 에러 */}
@@ -252,13 +253,13 @@ function SettingsPage() {
 
           {/* 로그아웃 */}
           <div className="mt-8 border-t border-[var(--color-border)] pt-4">
-            <button
-              type="button"
-              className="cursor-pointer rounded-lg px-4 py-2 text-sm text-[var(--color-error)] hover:bg-[var(--color-error-subtle)]"
+            <Button
+              variant="danger"
+              size="md"
               onClick={handleLogout}
             >
               로그아웃
-            </button>
+            </Button>
           </div>
         </section>
 

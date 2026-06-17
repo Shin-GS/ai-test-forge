@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { Button, Input } from '@/components/ui'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -61,7 +62,7 @@ function LoginPage() {
             >
               이메일
             </label>
-            <input
+            <Input
               id="email"
               type="email"
               value={email}
@@ -69,7 +70,6 @@ function LoginPage() {
               placeholder="name@company.com"
               required
               autoComplete="email"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] outline-none transition-[border-color] duration-[var(--transition-fast)] focus:border-[var(--color-accent)]"
             />
           </div>
 
@@ -80,7 +80,7 @@ function LoginPage() {
             >
               비밀번호
             </label>
-            <input
+            <Input
               id="password"
               type="password"
               value={password}
@@ -88,17 +88,18 @@ function LoginPage() {
               placeholder="비밀번호 입력"
               required
               autoComplete="current-password"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] outline-none transition-[border-color] duration-[var(--transition-fast)] focus:border-[var(--color-accent)]"
             />
           </div>
 
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="lg"
             disabled={isLoading}
-            className="w-full rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-3 text-sm font-medium text-white transition-[background-color] duration-[var(--transition-fast)] hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full"
           >
             {isLoading ? '로그인 중...' : '로그인'}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

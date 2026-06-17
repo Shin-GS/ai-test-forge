@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getSpecs } from '@/services/specApi'
 import SubdomainCard from '@/components/subdomain/SubdomainCard'
+import { Button } from '@/components/ui'
 
 function SubdomainPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -74,12 +75,12 @@ function SubdomainPage() {
             서브도메인 서버에 클라이언트 라이브러리를 추가하면 자동으로
             등록됩니다.
           </p>
-          <button
-            type="button"
-            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
+          <Button
+            variant="primary"
+            size="md"
           >
             연동 가이드 보기
-          </button>
+          </Button>
         </div>
       </div>
     )
