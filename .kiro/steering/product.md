@@ -110,7 +110,8 @@ ai-test-forge/
 - 모든 시크릿은 `.env` 파일에 관리 (`.env`는 gitignore 대상)
 - `.env.example`에 변수명 템플릿 유지
 - 서버: application.yml에서 `${ENV_VAR:default}` 형태로 참조
-- 서버: `APP_PROFILE` 환경변수로 프로필 전환 (local / dev / prod, 기본값: local)
+- 서버: `APP_PROFILE` 환경변수로 프로필 전환 (local / prod, 기본값: local)
+- AI provider, DB 접속 정보, Mock 사용 여부 등 대부분 설정은 `.env`로 제어
 - 웹: Vite 환경변수는 `VITE_` 접두사 사용
 
 ## 빌드 & 실행
@@ -166,7 +167,7 @@ docker compose up -d --build               # 8080 포트에서 모든 것 서빙
 - 웹 UI → 서버 프록시: Vite dev server에서 `/api` → `localhost:8080`
 
 ## 로컬 개발 환경
-- local 프로필: Mock AI 서비스 (실제 API 호출 없이 시뮬레이션 응답 반환)
+- local 프로필 + `AI_*_PROVIDER=mock`: Mock AI 서비스 (실제 API 호출 없이 시뮬레이션 응답 반환)
 - 웹 개발 모드: Vite dev server(5173) + API 프록시 → localhost:8080 (HMR 활용)
 - 통합 빌드 모드: `./gradlew bootJar` 실행 시 FE 빌드 → static 복사 → 단일 JAR 생성
 - 배포: Docker 단일 컨테이너 (8080 포트에서 FE+BE 모두 서빙)

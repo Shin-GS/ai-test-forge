@@ -17,7 +17,6 @@ public class AiTestForgeProperties {
     private String subdomainName;
     private String docsUrl = "/v3/api-docs";
     private String baseUrl;
-    private List<String> profiles = List.of("dev", "qa");
     private String environment = "default";
     private Duration heartbeatInterval = Duration.ofSeconds(30);
     private Auth auth;

@@ -67,7 +67,6 @@ spec-registry:
 6. 설정 파일로 제어:
    - `ai-test-forge.server-url`: 메인 서버 주소
    - `ai-test-forge.enabled`: 활성화 여부 (default: true)
-   - `ai-test-forge.profiles`: 활성화할 프로필 목록 (default: dev, qa)
    - `ai-test-forge.docs-url`: OpenAPI docs URL (default: /v3/api-docs)
    - `ai-test-forge.subdomain-name`: 서브도메인 식별명 (필수)
    - `ai-test-forge.environment`: 환경 식별 (선택, 미설정 시 자동 감지 또는 "default")
@@ -343,7 +342,7 @@ ai:
 
 ### 런타임 설정 변경 범위
 
-- **AI 모델 (reasoning/fast 모두)**: 런타임 변경 불가 — application.yml 또는 환경변수로만 변경 후 배포 (잘못된 모델 지정으로 인한 서비스 장애, 비용 폭탄, 팀 간 일관성 저하 방지)
+- **AI 모델 (reasoning/fast 모두)**: 런타임 변경 불가 — `.env` 환경변수로만 변경 후 재시작 (잘못된 모델 지정으로 인한 서비스 장애, 비용 폭탄, 팀 간 일관성 저하 방지)
 - **"다음 액션" 힌트 토글**: 런타임 변경 가능
 - **Agent Loop 파라미터**: 런타임 변경 가능
 
@@ -361,9 +360,9 @@ ai:
 
 ### Implementation Selection
 - 티어별로 provider + model 조합을 독립 설정
-- AiServiceConfig에서 provider 문자열 기반 switch로 구현체 생성 (openai, claude, openrouter)
+- AiServiceConfig에서 provider 문자열 기반 switch로 구현체 생성 (mock, openai, claude, openrouter)
 - @Qualifier("reasoning") / @Qualifier("fast")로 빈 분리
-- local 프로필에서는 MockAiServiceConfig가 양쪽 Mock 빈 등록
+- provider=mock이면 MockAiService 등록 (프로필과 무관, `.env`에서 제어)
 - 회사마다 자기 선호 모델로 환경변수만 변경하여 교체
 
 ### Mock (Local Development)
@@ -371,13 +370,14 @@ ai:
 - 간단한 패턴 매칭으로 tool call 시뮬레이션
 - 개발/테스트 시 AI 비용 없이 흐름 검증 가능
 
-## 8. 프로필 기반 제어
+## 8. 환경 설정
 
-| Profile | Client Library | AI Service | DB | Use Case |
-|---------|---------------|------------|-----|----------|
-| local | Push to localhost | MockAiService | Local MySQL | Local development |
-| dev | Push to dev server | Real AI | Dev MySQL | Integration testing |
-| prod | **Disabled** | Real AI | Prod MySQL | Production (client lib disabled) |
+- 프로필은 2개만 사용: `local` (개발), `prod` (운영)
+- local: ddl-auto: update, show-sql: true, Swagger 활성화
+- prod: ddl-auto: validate, Swagger 비활성화
+- AI provider, DB 접속 정보, Client Library 활성화 등 나머지는 `.env` 환경변수로 제어
+- Mock AI 사용 여부: `AI_REASONING_PROVIDER=mock` / `AI_FAST_PROVIDER=mock`
+- Client Library 활성화: `ai-test-forge.enabled=true/false`
 
 ## 9. 보안
 

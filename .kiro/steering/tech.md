@@ -78,13 +78,17 @@ inclusion: always
 - Retry: exponential backoff (429/5xx → 최대 3회, 초기 대기 1초, 배율 2.0)
 - Virtual Threads 활성화 (spring.threads.virtual.enabled=true) — 별도 스레드 풀 관리 불필요
 
-### Profile 전략 (3개)
+### Profile 전략 (2개)
 
-| Profile | DB | AI Service | Client Library | 용도 |
-|---------|-----|-----------|---------------|------|
-| local | Local MySQL | MockAiService | Push to localhost | 로컬 개발 |
-| dev | Dev MySQL | Real AI | Push to dev server | 통합 테스트 |
-| prod | Prod MySQL | Real AI | **Disabled** | 프로덕션 |
+| Profile | 역할 | 차이점 |
+|---------|------|--------|
+| local (기본) | 개발 | ddl-auto: update, show-sql: true, Swagger 활성화 |
+| prod | 운영 | ddl-auto: validate, Swagger 비활성화 |
+
+- AI provider, DB URL, API key 등 나머지 설정은 전부 `.env` 환경변수로 제어
+- Mock AI 여부도 `.env`의 `AI_REASONING_PROVIDER=mock` / `AI_FAST_PROVIDER=mock`으로 결정
+- Client Library 활성화도 `.env`의 `AI_TEST_FORGE_ENABLED=true/false`로 제어
+- `APP_PROFILE` 환경변수로 전환 (기본값: local)
 
 ### 모델 티어 (Model Tier)
 
@@ -95,20 +99,21 @@ inclusion: always
 | reasoning | `@Qualifier("reasoning")` | Agent Loop 메인 대화 (의도 파악 + tool 선택 + 오케스트레이션) | gpt-4o / claude-sonnet-4 |
 | fast | `@Qualifier("fast")` | 2-Stage 필터, 레시피 Body 생성, "다음 액션" 힌트 | gpt-4o-mini / claude-haiku |
 
-### Profile 기반 AI 서비스 분기
+### Provider 기반 AI 서비스 분기
 
-| Provider | @Profile | 설정 |
-|----------|----------|------|
-| MockAiService | `local` | 실제 호출 없음, 시뮬레이션 응답 (reasoning/fast 둘 다 Mock) |
-| OpenAiService | `!local` + `ai.{tier}.provider=openai` | OpenAI API 호출 |
-| ClaudeAiService | `!local` + `ai.{tier}.provider=claude` | Claude API 호출 |
-| OpenRouterService | `!local` + `ai.{tier}.provider=openrouter` | OpenRouter API 호출 |
+| Provider 설정값 | 구현체 | 설명 |
+|----------------|--------|------|
+| `mock` | MockAiService | 실제 호출 없음, 시뮬레이션 응답 |
+| `openai` | OpenAiService | OpenAI API 호출 |
+| `claude` | ClaudeAiService | Claude API 호출 |
+| `openrouter` | OpenRouterService | OpenRouter API 호출 |
 
 ### 티어별 AiService 빈 등록
 
 - `@Qualifier("reasoning")` — AgentLoopService에 주입
 - `@Qualifier("fast")` — TwoStageFilterService, AiBodyGenerator에 주입
-- local 프로필: MockAiService를 reasoning/fast 양쪽에 등록
+- AiServiceConfig에서 `ai.reasoning.provider` / `ai.fast.provider` 값 기반으로 구현체 선택
+- `provider=mock`이면 MockAiService 등록 (프로필과 무관)
 
 ### Fallback 정책
 - Body 생성(fast) 실패 → reasoning으로 1회 재시도
@@ -116,7 +121,7 @@ inclusion: always
 - 힌트 생성 실패 → 힌트 없이 진행
 
 ### 런타임 설정 변경
-- AI 모델(reasoning/fast 모두): 런타임 변경 불가 — application.yml / 환경변수에서만 변경 후 배포
+- AI 모델(reasoning/fast 모두): 런타임 변경 불가 — `.env` 환경변수로만 변경 후 재시작
 - "다음 액션" 힌트 토글: 런타임 변경 가능 (SettingsService)
 - Agent Loop 파라미터: 런타임 변경 가능 (SettingsService)
 
@@ -126,10 +131,9 @@ inclusion: always
 - 토큰 카운팅 v1: chars/3 기반 추정치 (정밀 카운팅은 향후)
 
 ### 설정 파일 구조
-- `application.yml` — 공통 설정
-- `application-local.yml` — ddl-auto: update, show-sql: true, Swagger 활성화, Mock AI
-- `application-dev.yml` — ddl-auto: update, Real AI
-- `application-prod.yml` — ddl-auto: validate, Real AI, Swagger 비활성화
+- `application.yml` — 공통 설정 (`.env` 환경변수 참조)
+- `application-local.yml` — ddl-auto: update, show-sql: true, Swagger 활성화
+- `application-prod.yml` — ddl-auto: validate, Swagger 비활성화
 
 ## Client Library (Spring Boot Starter)
 
@@ -142,7 +146,7 @@ inclusion: always
 ### 설계 원칙
 - Swagger 라이브러리에 직접 의존하지 않음 (HTTP로 docs URL 호출)
 - Spring Boot auto-configuration 메커니즘 사용
-- Profile 기반 활성화 제어
+- `enabled` 프로퍼티 기반 활성화 제어
 
 ### 설정 예시 (서브도메인 서버의 application.yml)
 ```yaml
@@ -151,7 +155,6 @@ ai-test-forge:
   server-url: http://localhost:8080
   subdomain-name: user-service
   docs-url: /v3/api-docs
-  profiles: dev, qa
 ```
 
 ## Known Gotchas

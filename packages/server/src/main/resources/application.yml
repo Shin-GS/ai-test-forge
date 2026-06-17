@@ -52,12 +52,12 @@ ai:
   openrouter:
     api-key: ${OPENROUTER_API_KEY:}
   reasoning:
-    provider: ${AI_REASONING_PROVIDER:openai}
+    provider: ${AI_REASONING_PROVIDER:mock}
     model: ${AI_REASONING_MODEL:gpt-4o}
     max-input-tokens: ${AI_REASONING_MAX_INPUT:120000}
     max-output-tokens: ${AI_REASONING_MAX_OUTPUT:16000}
   fast:
-    provider: ${AI_FAST_PROVIDER:openai}
+    provider: ${AI_FAST_PROVIDER:mock}
     model: ${AI_FAST_MODEL:gpt-4o-mini}
     max-input-tokens: ${AI_FAST_MAX_INPUT:120000}
     max-output-tokens: ${AI_FAST_MAX_OUTPUT:4000}

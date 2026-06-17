@@ -30,11 +30,6 @@ public class SpecRegistrationService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void registerOnStartup() {
-        if (!isActiveProfile()) {
-            log.info("AI Test Forge: 현재 프로필이 활성화 대상이 아닙니다. 등록을 건너뜁니다.");
-            return;
-        }
-
         int maxRetries = 3;
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
@@ -109,12 +104,6 @@ public class SpecRegistrationService {
                 .body(body)
                 .retrieve()
                 .toBodilessEntity();
-    }
-
-    private boolean isActiveProfile() {
-        // 프로필 검사는 AutoConfiguration에서 @ConditionalOnProperty로 이미 필터됨
-        // 여기서는 항상 true 반환 (추가 검증 필요 시 확장)
-        return true;
     }
 
     private String computeHash(String content) {

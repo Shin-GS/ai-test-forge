@@ -77,7 +77,6 @@ ai-test-forge/
 │   │       └── resources/
 │   │           ├── application.yml
 │   │           ├── application-local.yml
-│   │           ├── application-dev.yml
 │   │           └── application-prod.yml
 │   │
 │   ├── web/                             # React 채팅 UI
@@ -184,12 +183,12 @@ Controller → Service → Infra → External
 
 | 서브패키지 | 역할 | 인터페이스 | Mock 전략 |
 |-----------|------|-----------|-----------|
-| `ai/` | AI 채팅 완성 | `AiService` | `@Profile("local")` MockAiService |
+| `ai/` | AI 채팅 완성 | `AiService` | provider=mock 설정 시 MockAiService |
 | `auth/` | JWT 인증 처리 + Rate Limiter | 없음 (단일 구현) | 없음 |
 
 **규칙:**
 - 외부 서비스는 인터페이스 + 구현체 + Mock 구조 유지
-- Mock은 `@Profile("local")`, 실제 구현체는 `@Profile("!local")`
+- Mock은 provider 설정값(`mock`)으로 활성화 (프로필 무관)
 - `infra/`는 도메인 규칙을 모름 — 시킨 대로 외부 시스템과 통신할 뿐
 
 ## 클라이언트 라이브러리 구조
@@ -214,6 +213,6 @@ packages/client-spring/src/main/java/com/aitestforge/client/
 
 **설계 원칙:**
 - Swagger 라이브러리에 직접 의존하지 않음 (HTTP로 raw JSON 획득)
-- 프로필 기반 활성화 (dev/qa에서만 동작, prod 비활성화)
+- `enabled` 프로퍼티 기반 활성화 제어
 - `application.yml` 프로퍼티로 설정 제어
 - Spring Boot Starter 자동 설정 메커니즘 활용
