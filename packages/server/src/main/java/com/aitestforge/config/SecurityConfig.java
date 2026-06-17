@@ -32,7 +32,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/specs/register").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // SPA 정적 리소스 (JS, CSS, 이미지, favicon 등)
-                        .requestMatchers("/", "/index.html", "/favicon.ico").permitAll()
+                        .requestMatchers("/", "/index.html", "/favicon.*").permitAll()
                         .requestMatchers("/assets/**").permitAll()
                         // SPA 클라이언트 라우트 (React Router)
                         .requestMatchers("/login", "/subdomains/**", "/recipes", "/settings").permitAll()

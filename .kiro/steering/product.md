@@ -131,7 +131,7 @@ pnpm dev:web                               # 또는 cd packages/web && pnpm dev
 pnpm build:web                             # 또는 cd packages/web && pnpm build
 
 # 통합 빌드 (FE+BE 단일 JAR)
-pnpm build                                 # pnpm build:web → gradlew bootJar
+./gradlew :packages:server:bootJar        # FE 빌드 → static 복사 → JAR (processResources에서 자동)
 
 # Docker (단일 컨테이너에서 FE+BE 서빙)
 docker compose up -d --build               # 8080 포트에서 모든 것 서빙

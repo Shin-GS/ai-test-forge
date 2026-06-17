@@ -16,7 +16,7 @@ COPY packages/client-spring/ packages/client-spring/
 # FE 빌드 결과물을 server static으로 복사
 COPY --from=frontend /app/packages/web/dist/ packages/server/src/main/resources/static/
 # Gradle에서 FE 빌드 스킵 (이미 복사됨)
-RUN chmod +x gradlew && ./gradlew :packages:server:bootJar -x test -x buildFrontend
+RUN chmod +x gradlew && ./gradlew :packages:server:bootJar -x test -x buildFrontend -x copyWeb
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app
