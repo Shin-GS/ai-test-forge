@@ -53,6 +53,15 @@ inclusion: always
 | COMPLETED | AI가 작업을 완료함 |
 | WAITING | AI가 사용자에게 추가 정보를 요청 중 |
 
+## AI 모델 티어 용어
+
+| 용어 | 영문 | 설명 |
+|------|------|------|
+| 모델 티어 | Model Tier | 작업 난이도에 따라 AI 모델을 분류하는 개념 (reasoning, fast) |
+| Reasoning 모델 | Reasoning Model | 고성능 AI 모델. Agent Loop 메인 대화 (의도 파악 + tool 선택 + 크로스 서비스 오케스트레이션)에 사용 |
+| Fast 모델 | Fast Model | 경량 AI 모델. 2-Stage 필터, 레시피 Body 생성, "다음 액션" 힌트 생성 등 단순 작업에 사용 |
+| Fallback | Fallback | Fast 모델 실패 시 Reasoning 모델로 자동 재시도하는 메커니즘 (Body 생성에만 적용) |
+
 ## 기술 용어
 
 | 용어 | 설명 | 사용 금지 표현 |

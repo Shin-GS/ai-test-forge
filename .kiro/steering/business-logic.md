@@ -302,8 +302,64 @@ public interface AiService {
 }
 ```
 
+### 모델 티어 (Model Tier)
+
+작업 난이도에 따라 AI 모델을 2개 티어로 분리하여 비용 최적화와 성능을 동시에 확보한다.
+
+| 티어 | 용도 | 기본 모델 |
+|------|------|-----------|
+| reasoning (고성능) | Agent Loop 메인 대화 (의도 파악 + tool 선택 + 크로스 서비스 오케스트레이션) | gpt-4o |
+| fast (경량) | 2-Stage 필터, 레시피 Body 생성, "다음 액션" 힌트 생성 | gpt-4o-mini |
+
+### 설정 구조
+
+```yaml
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+  claude:
+    api-key: ${CLAUDE_API_KEY:}
+  openrouter:
+    api-key: ${OPENROUTER_API_KEY:}
+  reasoning:
+    provider: ${AI_REASONING_PROVIDER:openai}
+    model: ${AI_REASONING_MODEL:gpt-4o}
+    max-input-tokens: ${AI_REASONING_MAX_INPUT:120000}
+    max-output-tokens: ${AI_REASONING_MAX_OUTPUT:16000}
+  fast:
+    provider: ${AI_FAST_PROVIDER:openai}
+    model: ${AI_FAST_MODEL:gpt-4o-mini}
+    max-input-tokens: ${AI_FAST_MAX_INPUT:120000}
+    max-output-tokens: ${AI_FAST_MAX_OUTPUT:4000}
+```
+
+### Fallback 정책
+
+| 작업 | 실패 시 동작 |
+|------|-------------|
+| Body 생성 (fast) | reasoning으로 1회 재시도 |
+| 2-Stage 필터 (fast) | fallback으로 전체 tool 제공 (재시도 안 함) |
+| 힌트 생성 (fast) | 힌트 없이 진행 (재시도 안 함) |
+
+### 런타임 설정 변경 범위
+
+- **fast 모델**: provider + model을 런타임(설정 UI)에서 변경 가능
+- **reasoning 모델**: application.yml 또는 환경변수로만 변경 (실서비스 안정성 보장)
+
+### 토큰 카운팅
+
+- **v1**: `chars / 3` 기반 추정치로 max-input-tokens 초과 여부 판단
+- 초과 시 동작:
+  - 히스토리 truncate (오래된 메시지부터 제거)
+  - 또는 2-Stage 강제 발동 (tool 목록 축소)
+
+### 모니터링
+
+- 티어별 input/output tokens 메트릭 (Prometheus)
+- Fallback 발생 횟수 메트릭
+
 ### Implementation Selection
-- application.yml에서 `ai.provider` 설정 (openai, claude, mock)
+- 티어별로 provider + model 조합을 독립 설정
 - @Profile 또는 @ConditionalOnProperty로 빈 선택
 - 회사마다 자기 선호 모델로 구현체만 교체
 
