@@ -80,6 +80,27 @@ export const MESSAGES = {
       confirmDelete: (name: string) =>
         `"${name}" 워크스페이스를 삭제하시겠습니까?`,
     },
+    ai: {
+      title: 'AI 설정',
+      providerLabel: 'Provider',
+      providerDescription: 'AI 모델 제공자',
+      modelLabel: 'Model',
+      modelDescription: '사용할 AI 모델명',
+      loading: 'AI 설정을 불러오는 중...',
+      loadError: 'AI 설정을 불러올 수 없습니다.',
+    },
+    agentLoop: {
+      title: 'Agent Loop 설정',
+      maxIterationsLabel: '최대 반복 횟수',
+      maxIterationsUnit: '회',
+      maxToolCallsLabel: '턴당 Tool Call',
+      maxToolCallsUnit: '개',
+      timeoutLabel: '타임아웃',
+      timeoutUnit: '초',
+      saveButton: '저장',
+      saved: '저장됨 ✓',
+      saveFailed: '저장 실패',
+    },
     account: {
       title: '계정',
     },

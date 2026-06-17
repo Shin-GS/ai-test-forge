@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -7,9 +7,12 @@ import {
   createWorkspace,
   deleteWorkspace,
 } from '@/services/workspaceApi'
+import { getSettings, updateSettings } from '@/services/settingsApi'
 import type { WorkspaceResponse } from '@/types/workspace'
 import { Button, Input } from '@/components/ui'
 import { MESSAGES } from '@/constants'
+
+const AI_PROVIDERS = ['openai', 'claude', 'openrouter', 'mock'] as const
 
 function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
   const queryClient = useQueryClient()
@@ -210,6 +213,302 @@ function WorkspaceSection() {
   )
 }
 
+function AiSettingsSection() {
+  const queryClient = useQueryClient()
+
+  const { data: settings, isLoading, isError, error } = useQuery({
+    queryKey: ['settings'],
+    queryFn: getSettings,
+  })
+
+  const [provider, setProvider] = useState('')
+  const [model, setModel] = useState('')
+
+  useEffect(() => {
+    if (settings) {
+      setProvider(settings.aiProvider)
+      setModel(settings.aiModel)
+    }
+  }, [settings])
+
+  const updateMutation = useMutation({
+    mutationFn: updateSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] })
+    },
+  })
+
+  const saveAiSettings = useCallback(
+    (newProvider: string, newModel: string) => {
+      if (!settings) return
+      updateMutation.mutate({
+        aiProvider: newProvider,
+        aiModel: newModel,
+        maxIterations: settings.maxIterations,
+        maxToolCallsPerTurn: settings.maxToolCallsPerTurn,
+        timeoutSeconds: settings.timeoutSeconds,
+      })
+    },
+    [settings, updateMutation],
+  )
+
+  function handleProviderChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const newProvider = e.target.value
+    setProvider(newProvider)
+    saveAiSettings(newProvider, model)
+  }
+
+  function handleModelBlur() {
+    if (settings && model !== settings.aiModel) {
+      saveAiSettings(provider, model)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <section className="mb-8">
+        <h2 className="mb-4 border-b border-[var(--color-border)] pb-2 text-lg font-semibold">
+          🤖 {MESSAGES.settings.ai.title}
+        </h2>
+        <p className="text-sm text-[var(--color-text-tertiary)]">
+          {MESSAGES.settings.ai.loading}
+        </p>
+      </section>
+    )
+  }
+
+  if (isError) {
+    return (
+      <section className="mb-8">
+        <h2 className="mb-4 border-b border-[var(--color-border)] pb-2 text-lg font-semibold">
+          🤖 {MESSAGES.settings.ai.title}
+        </h2>
+        <p className="text-sm text-[var(--color-error)]">
+          {error instanceof Error ? error.message : MESSAGES.settings.ai.loadError}
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="mb-8">
+      <h2 className="mb-4 border-b border-[var(--color-border)] pb-2 text-lg font-semibold">
+        🤖 {MESSAGES.settings.ai.title}
+      </h2>
+
+      {/* Provider */}
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
+        <div>
+          <div className="text-sm font-medium">{MESSAGES.settings.ai.providerLabel}</div>
+          <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
+            {MESSAGES.settings.ai.providerDescription}
+          </div>
+        </div>
+        <select
+          value={provider}
+          onChange={handleProviderChange}
+          className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] outline-none transition-[border-color] duration-[var(--transition-fast)] focus:border-[var(--color-accent)]"
+        >
+          {AI_PROVIDERS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Model */}
+      <div className="flex items-center justify-between py-3">
+        <div>
+          <div className="text-sm font-medium">{MESSAGES.settings.ai.modelLabel}</div>
+          <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
+            {MESSAGES.settings.ai.modelDescription}
+          </div>
+        </div>
+        <Input
+          type="text"
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          onBlur={handleModelBlur}
+          className="w-48"
+        />
+      </div>
+
+      {/* 저장 상태 표시 */}
+      {updateMutation.isPending && (
+        <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+          {MESSAGES.common.loading}
+        </p>
+      )}
+      {updateMutation.isError && (
+        <p className="mt-1 text-xs text-[var(--color-error)]">
+          {MESSAGES.settings.agentLoop.saveFailed}
+        </p>
+      )}
+    </section>
+  )
+}
+
+function AgentLoopSection() {
+  const queryClient = useQueryClient()
+
+  const { data: settings, isLoading, isError, error } = useQuery({
+    queryKey: ['settings'],
+    queryFn: getSettings,
+  })
+
+  const [maxIterations, setMaxIterations] = useState(20)
+  const [maxToolCalls, setMaxToolCalls] = useState(5)
+  const [timeout, setTimeout] = useState(120)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'failed'>('idle')
+
+  useEffect(() => {
+    if (settings) {
+      setMaxIterations(settings.maxIterations)
+      setMaxToolCalls(settings.maxToolCallsPerTurn)
+      setTimeout(settings.timeoutSeconds)
+    }
+  }, [settings])
+
+  const updateMutation = useMutation({
+    mutationFn: updateSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] })
+      setSaveStatus('saved')
+      window.setTimeout(() => setSaveStatus('idle'), 2000)
+    },
+    onError: () => {
+      setSaveStatus('failed')
+      window.setTimeout(() => setSaveStatus('idle'), 2000)
+    },
+  })
+
+  function handleSave() {
+    if (!settings) return
+    updateMutation.mutate({
+      aiProvider: settings.aiProvider,
+      aiModel: settings.aiModel,
+      maxIterations,
+      maxToolCallsPerTurn: maxToolCalls,
+      timeoutSeconds: timeout,
+    })
+  }
+
+  function clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(value, min), max)
+  }
+
+  if (isLoading) {
+    return (
+      <section className="mb-8">
+        <h2 className="mb-4 border-b border-[var(--color-border)] pb-2 text-lg font-semibold">
+          🔄 {MESSAGES.settings.agentLoop.title}
+        </h2>
+        <p className="text-sm text-[var(--color-text-tertiary)]">
+          {MESSAGES.settings.ai.loading}
+        </p>
+      </section>
+    )
+  }
+
+  if (isError) {
+    return (
+      <section className="mb-8">
+        <h2 className="mb-4 border-b border-[var(--color-border)] pb-2 text-lg font-semibold">
+          🔄 {MESSAGES.settings.agentLoop.title}
+        </h2>
+        <p className="text-sm text-[var(--color-error)]">
+          {error instanceof Error ? error.message : MESSAGES.settings.ai.loadError}
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="mb-8">
+      <h2 className="mb-4 border-b border-[var(--color-border)] pb-2 text-lg font-semibold">
+        🔄 {MESSAGES.settings.agentLoop.title}
+      </h2>
+
+      {/* 최대 반복 횟수 */}
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
+        <div>
+          <div className="text-sm font-medium">{MESSAGES.settings.agentLoop.maxIterationsLabel}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={1}
+            max={100}
+            value={maxIterations}
+            onChange={(e) => setMaxIterations(clamp(Number(e.target.value), 1, 100))}
+            className="w-20 text-center"
+          />
+          <span className="text-xs text-[var(--color-text-tertiary)]">
+            {MESSAGES.settings.agentLoop.maxIterationsUnit}
+          </span>
+        </div>
+      </div>
+
+      {/* 턴당 Tool Call */}
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
+        <div>
+          <div className="text-sm font-medium">{MESSAGES.settings.agentLoop.maxToolCallsLabel}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={1}
+            max={20}
+            value={maxToolCalls}
+            onChange={(e) => setMaxToolCalls(clamp(Number(e.target.value), 1, 20))}
+            className="w-20 text-center"
+          />
+          <span className="text-xs text-[var(--color-text-tertiary)]">
+            {MESSAGES.settings.agentLoop.maxToolCallsUnit}
+          </span>
+        </div>
+      </div>
+
+      {/* 타임아웃 */}
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
+        <div>
+          <div className="text-sm font-medium">{MESSAGES.settings.agentLoop.timeoutLabel}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={10}
+            max={600}
+            value={timeout}
+            onChange={(e) => setTimeout(clamp(Number(e.target.value), 10, 600))}
+            className="w-20 text-center"
+          />
+          <span className="text-xs text-[var(--color-text-tertiary)]">
+            {MESSAGES.settings.agentLoop.timeoutUnit}
+          </span>
+        </div>
+      </div>
+
+      {/* 저장 버튼 */}
+      <div className="mt-4 flex items-center gap-3">
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleSave}
+          disabled={updateMutation.isPending}
+        >
+          {saveStatus === 'saved'
+            ? MESSAGES.settings.agentLoop.saved
+            : saveStatus === 'failed'
+              ? MESSAGES.settings.agentLoop.saveFailed
+              : MESSAGES.settings.agentLoop.saveButton}
+        </Button>
+      </div>
+    </section>
+  )
+}
+
 function SettingsPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
@@ -265,81 +564,10 @@ function SettingsPage() {
         </section>
 
         {/* AI 설정 섹션 */}
-        <section className="mb-8">
-          <h2 className="mb-4 border-b border-[var(--color-border)] pb-2 text-lg font-semibold">
-            🤖 AI 설정
-          </h2>
-
-          <div className="flex items-center justify-between py-3">
-            <div>
-              <div className="text-sm font-medium">Provider</div>
-              <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
-                AI 모델 제공자
-              </div>
-            </div>
-            <div className="text-sm text-[var(--color-text-secondary)]">
-              mock
-            </div>
-          </div>
-        </section>
+        <AiSettingsSection />
 
         {/* Agent Loop 설정 섹션 */}
-        <section className="mb-8">
-          <h2 className="mb-4 border-b border-[var(--color-border)] pb-2 text-lg font-semibold">
-            🔄 Agent Loop 설정
-          </h2>
-
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
-            <div>
-              <div className="text-sm font-medium">최대 반복 횟수</div>
-              <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
-                AI가 한 번의 요청에서 최대 몇 회까지 반복할지
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-[var(--color-text-secondary)]">
-                20
-              </span>
-              <span className="text-xs text-[var(--color-text-tertiary)]">
-                회
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
-            <div>
-              <div className="text-sm font-medium">턴당 Tool Call</div>
-              <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
-                한 번의 AI 응답에서 최대 API 호출 수
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-[var(--color-text-secondary)]">
-                5
-              </span>
-              <span className="text-xs text-[var(--color-text-tertiary)]">
-                개
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between py-3">
-            <div>
-              <div className="text-sm font-medium">타임아웃</div>
-              <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
-                전체 Agent Loop의 최대 실행 시간
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-[var(--color-text-secondary)]">
-                120
-              </span>
-              <span className="text-xs text-[var(--color-text-tertiary)]">
-                초
-              </span>
-            </div>
-          </div>
-        </section>
+        <AgentLoopSection />
       </div>
     </div>
   )
