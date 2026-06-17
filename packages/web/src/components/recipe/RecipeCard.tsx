@@ -4,6 +4,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { RecipeResponse, RecipeStep } from '@/types/recipe'
 import { deleteRecipe } from '@/services/recipeApi'
 import { useChatStore } from '@/stores/useChatStore'
+import { Button, Input } from '@/components/ui'
+import { MESSAGES } from '@/constants'
 
 interface RecipeCardProps {
   recipe: RecipeResponse
@@ -118,28 +120,21 @@ function RecipeCard({ recipe }: RecipeCardProps) {
 
         {/* 액션 버튼 */}
         <div className="flex gap-2">
-          <button
-            type="button"
-            className="rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
-            onClick={handleRun}
-          >
-            ▶ 실행
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
-            onClick={handleDetail}
-          >
-            상세 보기
-          </button>
-          <button
-            type="button"
+          <Button variant="primary" size="sm" onClick={handleRun}>
+            {MESSAGES.recipe.run}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleDetail}>
+            {MESSAGES.recipe.detail}
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
             disabled={deleteMutation.isPending}
-            className="ml-auto rounded-lg px-3 py-1.5 text-sm text-[var(--color-error)] hover:bg-[var(--color-error-subtle)] disabled:opacity-50"
+            className="ml-auto"
             onClick={handleDelete}
           >
-            {deleteMutation.isPending ? '삭제 중...' : '삭제'}
-          </button>
+            {deleteMutation.isPending ? MESSAGES.settings.workspace.deleting : MESSAGES.common.delete}
+          </Button>
         </div>
       </div>
 
@@ -155,32 +150,27 @@ function RecipeCard({ recipe }: RecipeCardProps) {
                 <label className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">
                   {label}
                 </label>
-                <input
+                <Input
                   type="text"
                   value={variableValues[label] ?? ''}
                   onChange={(e) => handleVariableChange(label, e.target.value)}
                   placeholder={`${label} 입력`}
-                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] focus:outline-none"
                 />
               </div>
             ))}
           </div>
           <div className="mt-3 flex gap-2">
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="sm"
               disabled={!allFieldsFilled}
-              className="rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleExecuteWithVariables}
             >
               실행
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
-              onClick={handleCancelVariableForm}
-            >
-              취소
-            </button>
+            </Button>
+            <Button variant="secondary" size="sm" onClick={handleCancelVariableForm}>
+              {MESSAGES.common.cancel}
+            </Button>
           </div>
         </div>
       )}

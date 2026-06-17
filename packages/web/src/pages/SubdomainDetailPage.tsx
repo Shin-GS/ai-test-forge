@@ -3,6 +3,8 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getSpecDetail } from '@/services/specApi'
 import { formatRelativeTime } from '@/utils/formatRelativeTime'
+import { Button, Badge } from '@/components/ui'
+import { MESSAGES } from '@/constants'
 import type { ApiEndpointResponse } from '@/types/spec'
 
 /** method별 색상 매핑 */
@@ -98,15 +100,16 @@ function SubdomainDetailPage() {
           <p className="text-sm text-[var(--color-text-secondary)]">
             {error instanceof Error
               ? error.message
-              : '알 수 없는 오류가 발생했습니다.'}
+              : MESSAGES.common.unknownError}
           </p>
-          <button
-            type="button"
-            className="mt-4 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-4"
             onClick={() => navigate('/subdomains')}
           >
             ← 목록으로
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -204,13 +207,9 @@ function SubdomainDetailPage() {
         )}
 
         {/* 채팅에서 사용하기 버튼 */}
-        <button
-          type="button"
-          className="mt-4 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
-          onClick={handleUseChatClick}
-        >
-          💬 채팅에서 이 서버 사용하기 →
-        </button>
+        <Button variant="primary" size="md" className="mt-4" onClick={handleUseChatClick}>
+          {MESSAGES.subdomain.chatButton} 이 서버 사용하기 →
+        </Button>
       </div>
     </div>
   )
@@ -222,26 +221,14 @@ interface StatusBadgeProps {
 
 function StatusBadge({ status }: StatusBadgeProps) {
   if (status === 'ACTIVE') {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-success-subtle)] px-2 py-0.5 text-xs font-medium text-[var(--color-success)]">
-        ✅ ACTIVE
-      </span>
-    )
+    return <Badge variant="success">✅ ACTIVE</Badge>
   }
 
   if (status === 'STALE') {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-warning-subtle)] px-2 py-0.5 text-xs font-medium text-[var(--color-warning)]">
-        ⚠️ STALE
-      </span>
-    )
+    return <Badge variant="warning">⚠️ STALE</Badge>
   }
 
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-info-subtle)] px-2 py-0.5 text-xs font-medium text-[var(--color-info)]">
-      ⏳ REGISTERING
-    </span>
-  )
+  return <Badge variant="info">⏳ REGISTERING</Badge>
 }
 
 export default SubdomainDetailPage
