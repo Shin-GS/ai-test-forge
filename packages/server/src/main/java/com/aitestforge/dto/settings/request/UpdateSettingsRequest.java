@@ -3,20 +3,9 @@ package com.aitestforge.dto.settings.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 
 @Schema(description = "설정 수정 요청")
 public record UpdateSettingsRequest(
-        @Schema(description = "AI Provider (openai, claude, openrouter, mock)", example = "openai")
-        @NotBlank
-        @Pattern(regexp = "^(openai|claude|openrouter|mock)$", message = "aiProvider must be one of: openai, claude, openrouter, mock")
-        String aiProvider,
-
-        @Schema(description = "AI 모델명", example = "gpt-4o")
-        @NotBlank
-        String aiModel,
-
         @Schema(description = "Agent Loop 최대 반복 횟수 (1~100)", example = "20")
         @Min(1)
         @Max(100)

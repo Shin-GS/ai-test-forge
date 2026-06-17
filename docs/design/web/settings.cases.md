@@ -22,12 +22,16 @@
 ## Case 2: AI 설정
 - 조건: 두 번째 섹션
 - 표시:
-  - Provider 드롭다운: OpenAI / Claude / OpenRouter / Mock
-  - Model 텍스트 입력: 사용할 AI 모델명 직접 입력 (예: gpt-4o, claude-sonnet-4-20250514)
+  - **Reasoning 모델** 섹션 (읽기 전용):
+    - Provider: 텍스트 표시 (예: OpenAI) — 읽기 전용, 회색 배경
+    - Model: 텍스트 표시 (예: gpt-4o) — 읽기 전용, 회색 배경
+  - **Fast 모델** 섹션 (읽기 전용):
+    - Provider: 텍스트 표시 (예: OpenAI) — 읽기 전용, 회색 배경
+    - Model: 텍스트 표시 (예: gpt-4o-mini) — 읽기 전용, 회색 배경
+  - 안내 문구: "AI 모델 설정은 서버 배포 설정(yml/env)에서만 변경 가능합니다"
   - "다음 액션" 힌트: ON / OFF 토글
 - 인터랙션:
-  - Provider 드롭다운 변경 → 즉시 저장
-  - Model 입력 후 포커스 아웃 → 즉시 저장
+  - AI 모델 섹션은 인터랙션 없음 (전체 읽기 전용 — 현재 적용된 설정 확인용)
   - 토글 변경 → 즉시 저장
 
 ## Case 3: Agent Loop 설정
@@ -61,8 +65,8 @@
 | 워크스페이스 생성 | POST /api/v1/workspaces | 새 워크스페이스 |
 | 워크스페이스 수정 | PUT /api/v1/workspaces/{id} | 매핑 변경 |
 | 워크스페이스 삭제 | DELETE /api/v1/workspaces/{id} | 삭제 |
-| 설정 조회 | GET /api/v1/settings | AI, Agent Loop 설정 |
-| 설정 수정 | PUT /api/v1/settings | 설정 변경 |
+| 설정 조회 | GET /api/v1/settings | AI 티어별 설정 (전체 읽기 전용), Agent Loop 설정 |
+| 설정 수정 | PUT /api/v1/settings | Agent Loop 설정 + 다음 액션 힌트 변경 (AI 모델 설정은 변경 불가) |
 | 비밀번호 변경 | PUT /api/v1/auth/password | 비밀번호 변경 |
 | OTP 설정 | POST /api/v1/auth/otp/setup | TOTP secret 생성 + QR URI 반환 |
 | OTP 활성화 | POST /api/v1/auth/otp/verify | OTP 코드 검증 후 활성화 |

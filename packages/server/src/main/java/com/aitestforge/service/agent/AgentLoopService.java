@@ -17,8 +17,8 @@ import com.aitestforge.service.spec.SpecToolConverter;
 import com.aitestforge.service.spec.SpecControlFilter;
 import com.aitestforge.service.workspace.WorkspaceService;
 import com.aitestforge.service.settings.SettingsService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -45,10 +45,10 @@ import com.aitestforge.service.agent.SseEventBufferService.SseBufferedEvent;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AgentLoopService {
 
-    private final AiService aiService;
+    private final AiService reasoningAiService;
+    private final AiService fastAiService;
     private final ChatService chatService;
     private final ChatMessageRepository messageRepository;
     private final ChatSessionRepository sessionRepository;
@@ -59,6 +59,33 @@ public class AgentLoopService {
     private final TwoStageFilterService twoStageFilterService;
     private final SettingsService settingsService;
     private final SseEventBufferService sseEventBufferService;
+
+    public AgentLoopService(
+            @Qualifier("reasoning") AiService reasoningAiService,
+            @Qualifier("fast") AiService fastAiService,
+            ChatService chatService,
+            ChatMessageRepository messageRepository,
+            ChatSessionRepository sessionRepository,
+            SubdomainSpecRepository specRepository,
+            SpecToolConverter specToolConverter,
+            SpecControlFilter specControlFilter,
+            WorkspaceService workspaceService,
+            TwoStageFilterService twoStageFilterService,
+            SettingsService settingsService,
+            SseEventBufferService sseEventBufferService) {
+        this.reasoningAiService = reasoningAiService;
+        this.fastAiService = fastAiService;
+        this.chatService = chatService;
+        this.messageRepository = messageRepository;
+        this.sessionRepository = sessionRepository;
+        this.specRepository = specRepository;
+        this.specToolConverter = specToolConverter;
+        this.specControlFilter = specControlFilter;
+        this.workspaceService = workspaceService;
+        this.twoStageFilterService = twoStageFilterService;
+        this.settingsService = settingsService;
+        this.sseEventBufferService = sseEventBufferService;
+    }
 
     @Value("${agent-loop.max-iterations:20}")
     private int maxIterations;
@@ -204,7 +231,7 @@ public class AgentLoopService {
             }
 
             // AI 호출
-            AiChatResponse response = aiService.chat(history, tools);
+            AiChatResponse response = reasoningAiService.chat(history, tools);
 
             // tool call이 있으면 FE에 지시
             if (response.toolCalls() != null && !response.toolCalls().isEmpty()) {
@@ -408,7 +435,7 @@ public class AgentLoopService {
                     new com.aitestforge.infra.ai.dto.ChatMessage("user", prompt)
             );
 
-            AiChatResponse hintResponse = aiService.chat(hintMessages, List.of());
+            AiChatResponse hintResponse = fastAiService.chat(hintMessages, List.of());
 
             if (hintResponse.message() != null && !hintResponse.message().isBlank()) {
                 sendSseEvent(sessionId, "next_action_hint", Map.of("content", hintResponse.message()));

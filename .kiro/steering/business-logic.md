@@ -343,8 +343,9 @@ ai:
 
 ### 런타임 설정 변경 범위
 
-- **fast 모델**: provider + model을 런타임(설정 UI)에서 변경 가능
-- **reasoning 모델**: application.yml 또는 환경변수로만 변경 (실서비스 안정성 보장)
+- **AI 모델 (reasoning/fast 모두)**: 런타임 변경 불가 — application.yml 또는 환경변수로만 변경 후 배포 (잘못된 모델 지정으로 인한 서비스 장애, 비용 폭탄, 팀 간 일관성 저하 방지)
+- **"다음 액션" 힌트 토글**: 런타임 변경 가능
+- **Agent Loop 파라미터**: 런타임 변경 가능
 
 ### 토큰 카운팅
 
@@ -360,8 +361,10 @@ ai:
 
 ### Implementation Selection
 - 티어별로 provider + model 조합을 독립 설정
-- @Profile 또는 @ConditionalOnProperty로 빈 선택
-- 회사마다 자기 선호 모델로 구현체만 교체
+- AiServiceConfig에서 provider 문자열 기반 switch로 구현체 생성 (openai, claude, openrouter)
+- @Qualifier("reasoning") / @Qualifier("fast")로 빈 분리
+- local 프로필에서는 MockAiServiceConfig가 양쪽 Mock 빈 등록
+- 회사마다 자기 선호 모델로 환경변수만 변경하여 교체
 
 ### Mock (Local Development)
 - 실제 API 호출 없이 시뮬레이션 응답 반환

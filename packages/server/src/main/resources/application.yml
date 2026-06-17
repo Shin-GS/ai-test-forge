@@ -41,20 +41,26 @@ agent-loop:
   two-stage-threshold: ${AGENT_TWO_STAGE_THRESHOLD:30}
 
 ai:
-  provider: ${AI_PROVIDER:mock}
   retry:
     max-attempts: ${AI_RETRY_MAX_ATTEMPTS:3}
     initial-delay-ms: ${AI_RETRY_INITIAL_DELAY_MS:1000}
     multiplier: ${AI_RETRY_MULTIPLIER:2.0}
   openai:
     api-key: ${OPENAI_API_KEY:}
-    model: ${OPENAI_MODEL:gpt-4o}
   claude:
     api-key: ${CLAUDE_API_KEY:}
-    model: ${CLAUDE_MODEL:claude-sonnet-4-20250514}
   openrouter:
     api-key: ${OPENROUTER_API_KEY:}
-    model: ${OPENROUTER_MODEL:openai/gpt-4o}
+  reasoning:
+    provider: ${AI_REASONING_PROVIDER:openai}
+    model: ${AI_REASONING_MODEL:gpt-4o}
+    max-input-tokens: ${AI_REASONING_MAX_INPUT:120000}
+    max-output-tokens: ${AI_REASONING_MAX_OUTPUT:16000}
+  fast:
+    provider: ${AI_FAST_PROVIDER:openai}
+    model: ${AI_FAST_MODEL:gpt-4o-mini}
+    max-input-tokens: ${AI_FAST_MAX_INPUT:120000}
+    max-output-tokens: ${AI_FAST_MAX_OUTPUT:4000}
 
 jwt:
   secret: ${JWT_SECRET}

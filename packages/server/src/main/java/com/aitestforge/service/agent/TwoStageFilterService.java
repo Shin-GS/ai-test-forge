@@ -4,8 +4,8 @@ import com.aitestforge.infra.ai.AiService;
 import com.aitestforge.infra.ai.dto.AiChatResponse;
 import com.aitestforge.infra.ai.dto.ChatMessage;
 import com.aitestforge.infra.ai.dto.ToolDefinition;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -28,13 +28,16 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class TwoStageFilterService {
 
     private final AiService aiService;
 
     @Value("${agent-loop.two-stage-threshold:30}")
     private int twoStageThreshold;
+
+    public TwoStageFilterService(@Qualifier("fast") AiService aiService) {
+        this.aiService = aiService;
+    }
 
     /**
      * 2-Stage 필터링을 수행한다.

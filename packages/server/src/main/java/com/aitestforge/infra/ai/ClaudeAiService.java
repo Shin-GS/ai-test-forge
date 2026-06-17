@@ -9,11 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Service;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
@@ -26,9 +22,6 @@ import java.util.List;
  * Claude의 tool_use 응답 구조는 OpenAI와 다르므로 별도 파싱 필요.
  */
 @Slf4j
-@Service
-@Profile("!local")
-@ConditionalOnProperty(name = "ai.provider", havingValue = "claude")
 public class ClaudeAiService implements AiService {
 
     private static final String ANTHROPIC_VERSION = "2023-06-01";
@@ -38,11 +31,7 @@ public class ClaudeAiService implements AiService {
     private final String model;
     private final AiRetryTemplate retryTemplate;
 
-    public ClaudeAiService(
-            @Value("${ai.claude.api-key}") String apiKey,
-            @Value("${ai.claude.model:claude-sonnet-4-20250514}") String model,
-            ObjectMapper objectMapper,
-            AiRetryTemplate retryTemplate) {
+    public ClaudeAiService(String apiKey, String model, ObjectMapper objectMapper, AiRetryTemplate retryTemplate) {
         this.model = model;
         this.objectMapper = objectMapper;
         this.retryTemplate = retryTemplate;

@@ -14,4 +14,7 @@ springdoc:
     enabled: true
 
 ai:
-  provider: mock
+  reasoning:
+    provider: mock
+  fast:
+    provider: mock

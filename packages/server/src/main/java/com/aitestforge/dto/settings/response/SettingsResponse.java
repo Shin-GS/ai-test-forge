@@ -4,11 +4,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "설정 조회 응답")
 public record SettingsResponse(
-        @Schema(description = "AI Provider", example = "openai")
-        String aiProvider,
+        @Schema(description = "Reasoning 티어 Provider", example = "openai")
+        String reasoningProvider,
 
-        @Schema(description = "AI 모델명", example = "gpt-4o")
-        String aiModel,
+        @Schema(description = "Reasoning 티어 모델명", example = "gpt-4o")
+        String reasoningModel,
+
+        @Schema(description = "Fast 티어 Provider", example = "openai")
+        String fastProvider,
+
+        @Schema(description = "Fast 티어 모델명", example = "gpt-4o-mini")
+        String fastModel,
 
         @Schema(description = "Agent Loop 최대 반복 횟수", example = "20")
         int maxIterations,

@@ -5,8 +5,6 @@ import com.aitestforge.infra.ai.dto.ChatMessage;
 import com.aitestforge.infra.ai.dto.ToolCall;
 import com.aitestforge.infra.ai.dto.ToolDefinition;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,8 +19,6 @@ import java.util.UUID;
  * - 이전에 tool 결과가 있으면 → 완료 텍스트 응답
  */
 @Slf4j
-@Service
-@Profile("local")
 public class MockAiService implements AiService {
 
     @Override

@@ -9,8 +9,10 @@ function getAuthHeaders(): HeadersInit {
 }
 
 export interface SettingsResponse {
-  aiProvider: string
-  aiModel: string
+  reasoningProvider: string
+  reasoningModel: string
+  fastProvider: string
+  fastModel: string
   maxIterations: number
   maxToolCallsPerTurn: number
   timeoutSeconds: number
@@ -18,8 +20,6 @@ export interface SettingsResponse {
 }
 
 export interface UpdateSettingsRequest {
-  aiProvider: string
-  aiModel: string
   maxIterations: number
   maxToolCallsPerTurn: number
   timeoutSeconds: number

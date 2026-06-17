@@ -118,6 +118,25 @@
       border-radius: var(--radius-md);
       outline: none;
     }
+    /* 서브섹션 제목 */
+    .settings-subsection__title {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      margin-top: var(--space-4);
+      margin-bottom: var(--space-2);
+    }
+    /* 읽기 전용 필드 */
+    .settings-readonly {
+      padding: var(--space-1) var(--space-3);
+      background: var(--color-bg-tertiary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      opacity: 0.7;
+      cursor: not-allowed;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -237,33 +256,51 @@
           <div class="settings-page__inner">
             <div class="settings-section">
               <h2 class="settings-section__title">🤖 AI 설정</h2>
+
+              <!-- Reasoning 모델 (읽기 전용) -->
+              <h3 class="settings-subsection__title">🧠 Reasoning 모델 (고성능)</h3>
               <div class="settings-row">
                 <div>
                   <div class="settings-row__label">Provider</div>
-                  <div class="settings-row__desc">AI 모델 제공자</div>
                 </div>
                 <div class="settings-row__value">
-                  <select class="ws-select">
-                    <option selected>OpenAI</option>
-                    <option>Claude</option>
-                    <option>Mock (테스트용)</option>
-                  </select>
+                  <span class="settings-readonly">OpenAI</span>
                 </div>
               </div>
               <div class="settings-row">
                 <div>
                   <div class="settings-row__label">Model</div>
-                  <div class="settings-row__desc">사용할 모델</div>
                 </div>
                 <div class="settings-row__value">
-                  <select class="ws-select">
-                    <option selected>gpt-4o</option>
-                    <option>gpt-4o-mini</option>
-                    <option>gpt-3.5-turbo</option>
-                  </select>
+                  <span class="settings-readonly">gpt-4o</span>
+                </div>
+              </div>
+
+              <!-- Fast 모델 (읽기 전용) -->
+              <h3 class="settings-subsection__title">⚡ Fast 모델 (경량)</h3>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">Provider</div>
+                </div>
+                <div class="settings-row__value">
+                  <span class="settings-readonly">OpenAI</span>
                 </div>
               </div>
               <div class="settings-row">
+                <div>
+                  <div class="settings-row__label">Model</div>
+                </div>
+                <div class="settings-row__value">
+                  <span class="settings-readonly">gpt-4o-mini</span>
+                </div>
+              </div>
+
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-top:var(--space-2);">
+                AI 모델 설정은 서버 배포 설정(yml/env)에서만 변경 가능합니다
+              </div>
+
+              <!-- 다음 액션 힌트 토글 -->
+              <div class="settings-row" style="margin-top:var(--space-4);">
                 <div>
                   <div class="settings-row__label">"다음 액션" 힌트</div>
                   <div class="settings-row__desc">작업 완료 후 다음으로 할 수 있는 것을 제안 (AI 토큰 추가 사용)</div>

@@ -39,7 +39,7 @@ AI 기반 테스트 데이터 생성 플랫폼.
 5. **워크스페이스** — 유저별로 작업할 서브도메인+환경 세트를 구성 (서버 30+ 환경 대응)
 6. **서브도메인 인증** — 브라우저 로그인 기반 (SSO 자동 지원, 로그인 페이지 링크 제공)
 7. **2단계 전략** — 의도 파악 → 관련 API 필터링 (API 수가 많을 때). 그룹 기반 필터링 + fallback 지원
-8. **교체 가능한 AI 모듈** — 인터페이스 기반, 설정으로 OpenAI/Claude/기타 교체
+8. **교체 가능한 AI 모듈** — 인터페이스 기반, 설정으로 OpenAI/Claude/기타 교체. 모델 티어(reasoning/fast) 분리로 비용 최적화
 9. **레시피** — API 호출 패턴 저장/재사용. Direct 모드(AI 비호출, 토큰 0) + AI-Assisted 모드(body 생성만 AI, 토큰 80% 절감). 팀 공유, 자동 제안, 실행 전 스펙 검증 포함
 10. **API 제어 어노테이션** — 서브도메인 개발자가 코드 레벨에서 API의 테스트 도구 동작 제어 (@TestForgeExclude, @TestForgeBlock, @TestForgeConfirm, @TestForgeReadOnly, @TestForgeHint, @TestForgeGroup)
 11. **글로벌 API 제외 규칙** — 관리자가 메인 서버 설정으로 위험 API를 일괄 차단 (메서드/경로/태그 패턴)

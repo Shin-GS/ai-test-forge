@@ -86,14 +86,44 @@ inclusion: always
 | dev | Dev MySQL | Real AI | Push to dev server | 통합 테스트 |
 | prod | Prod MySQL | Real AI | **Disabled** | 프로덕션 |
 
+### 모델 티어 (Model Tier)
+
+작업 난이도에 따라 AI 모델을 분리하여 비용을 최적화한다.
+
+| 티어 | Qualifier | 용도 | 기본 모델 |
+|------|-----------|------|-----------|
+| reasoning | `@Qualifier("reasoning")` | Agent Loop 메인 대화 (의도 파악 + tool 선택 + 오케스트레이션) | gpt-4o / claude-sonnet-4 |
+| fast | `@Qualifier("fast")` | 2-Stage 필터, 레시피 Body 생성, "다음 액션" 힌트 | gpt-4o-mini / claude-haiku |
+
 ### Profile 기반 AI 서비스 분기
 
 | Provider | @Profile | 설정 |
 |----------|----------|------|
-| MockAiService | `local` | 실제 호출 없음, 시뮬레이션 응답 |
-| OpenAiService | `!local` + `ai.provider=openai` | OpenAI API 호출 |
-| ClaudeAiService | `!local` + `ai.provider=claude` | Claude API 호출 |
-| OpenRouterService | `!local` + `ai.provider=openrouter` | OpenRouter API 호출 (OpenAI 호환, 다양한 모델 접근) |
+| MockAiService | `local` | 실제 호출 없음, 시뮬레이션 응답 (reasoning/fast 둘 다 Mock) |
+| OpenAiService | `!local` + `ai.{tier}.provider=openai` | OpenAI API 호출 |
+| ClaudeAiService | `!local` + `ai.{tier}.provider=claude` | Claude API 호출 |
+| OpenRouterService | `!local` + `ai.{tier}.provider=openrouter` | OpenRouter API 호출 |
+
+### 티어별 AiService 빈 등록
+
+- `@Qualifier("reasoning")` — AgentLoopService에 주입
+- `@Qualifier("fast")` — TwoStageFilterService, AiBodyGenerator에 주입
+- local 프로필: MockAiService를 reasoning/fast 양쪽에 등록
+
+### Fallback 정책
+- Body 생성(fast) 실패 → reasoning으로 1회 재시도
+- 2-Stage 필터 실패 → 전체 tool 제공 (재시도 안 함)
+- 힌트 생성 실패 → 힌트 없이 진행
+
+### 런타임 설정 변경
+- AI 모델(reasoning/fast 모두): 런타임 변경 불가 — application.yml / 환경변수에서만 변경 후 배포
+- "다음 액션" 힌트 토글: 런타임 변경 가능 (SettingsService)
+- Agent Loop 파라미터: 런타임 변경 가능 (SettingsService)
+
+### 토큰 제한
+- `max-input-tokens`: 입력 토큰 상한 (초과 시 히스토리 truncate 또는 2-Stage 강제 발동)
+- `max-output-tokens`: API 호출 시 max_tokens 파라미터로 전달
+- 토큰 카운팅 v1: chars/3 기반 추정치 (정밀 카운팅은 향후)
 
 ### 설정 파일 구조
 - `application.yml` — 공통 설정

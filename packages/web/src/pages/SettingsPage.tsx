@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -13,8 +13,6 @@ import { changePassword, getMe, setupOtp, verifyOtp, disableOtp } from '@/servic
 import type { WorkspaceResponse } from '@/types/workspace'
 import { Button, Input } from '@/components/ui'
 import { MESSAGES } from '@/constants'
-
-const AI_PROVIDERS = ['openai', 'claude', 'openrouter', 'mock'] as const
 
 function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
   const queryClient = useQueryClient()
@@ -251,49 +249,12 @@ function AiSettingsSection() {
     queryFn: getSettings,
   })
 
-  const [provider, setProvider] = useState('')
-  const [model, setModel] = useState('')
-
-  useEffect(() => {
-    if (settings) {
-      setProvider(settings.aiProvider)
-      setModel(settings.aiModel)
-    }
-  }, [settings])
-
   const updateMutation = useMutation({
     mutationFn: updateSettings,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] })
     },
   })
-
-  const saveAiSettings = useCallback(
-    (newProvider: string, newModel: string) => {
-      if (!settings) return
-      updateMutation.mutate({
-        aiProvider: newProvider,
-        aiModel: newModel,
-        maxIterations: settings.maxIterations,
-        maxToolCallsPerTurn: settings.maxToolCallsPerTurn,
-        timeoutSeconds: settings.timeoutSeconds,
-        nextActionHintEnabled: settings.nextActionHintEnabled,
-      })
-    },
-    [settings, updateMutation],
-  )
-
-  function handleProviderChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const newProvider = e.target.value
-    setProvider(newProvider)
-    saveAiSettings(newProvider, model)
-  }
-
-  function handleModelBlur() {
-    if (settings && model !== settings.aiModel) {
-      saveAiSettings(provider, model)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -327,46 +288,43 @@ function AiSettingsSection() {
         🤖 {MESSAGES.settings.ai.title}
       </h2>
 
-      {/* Provider */}
+      {/* Reasoning 모델 (읽기 전용) */}
+      <h3 className="mt-4 mb-2 text-sm font-medium">{MESSAGES.settings.ai.reasoningTitle}</h3>
       <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
-        <div>
-          <div className="text-sm font-medium">{MESSAGES.settings.ai.providerLabel}</div>
-          <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
-            {MESSAGES.settings.ai.providerDescription}
-          </div>
-        </div>
-        <select
-          value={provider}
-          onChange={handleProviderChange}
-          className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] outline-none transition-[border-color] duration-[var(--transition-fast)] focus:border-[var(--color-accent)]"
-        >
-          {AI_PROVIDERS.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
+        <div className="text-sm font-medium">{MESSAGES.settings.ai.providerLabel}</div>
+        <span className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] opacity-70">
+          {settings?.reasoningProvider}
+        </span>
+      </div>
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
+        <div className="text-sm font-medium">{MESSAGES.settings.ai.modelLabel}</div>
+        <span className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] opacity-70">
+          {settings?.reasoningModel}
+        </span>
       </div>
 
-      {/* Model */}
+      {/* Fast 모델 (읽기 전용) */}
+      <h3 className="mt-4 mb-2 text-sm font-medium">{MESSAGES.settings.ai.fastTitle}</h3>
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
+        <div className="text-sm font-medium">{MESSAGES.settings.ai.providerLabel}</div>
+        <span className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] opacity-70">
+          {settings?.fastProvider}
+        </span>
+      </div>
       <div className="flex items-center justify-between py-3">
-        <div>
-          <div className="text-sm font-medium">{MESSAGES.settings.ai.modelLabel}</div>
-          <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
-            {MESSAGES.settings.ai.modelDescription}
-          </div>
-        </div>
-        <Input
-          type="text"
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          onBlur={handleModelBlur}
-          className="w-48"
-        />
+        <div className="text-sm font-medium">{MESSAGES.settings.ai.modelLabel}</div>
+        <span className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] opacity-70">
+          {settings?.fastModel}
+        </span>
       </div>
 
-      {/* 다음 액션 힌트 */}
-      <div className="flex items-center justify-between border-t border-[var(--color-border)] py-3">
+      {/* 안내 문구 */}
+      <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
+        {MESSAGES.settings.ai.readonlyNotice}
+      </p>
+
+      {/* 다음 액션 힌트 토글 */}
+      <div className="mt-4 flex items-center justify-between border-t border-[var(--color-border)] py-3">
         <div>
           <div className="text-sm font-medium">{MESSAGES.settings.ai.nextActionLabel}</div>
           <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
@@ -378,8 +336,6 @@ function AiSettingsSection() {
           onClick={() => {
             if (!settings) return
             updateMutation.mutate({
-              aiProvider: provider,
-              aiModel: model,
               maxIterations: settings.maxIterations,
               maxToolCallsPerTurn: settings.maxToolCallsPerTurn,
               timeoutSeconds: settings.timeoutSeconds,
@@ -454,8 +410,6 @@ function AgentLoopSection() {
   function handleSave() {
     if (!settings) return
     updateMutation.mutate({
-      aiProvider: settings.aiProvider,
-      aiModel: settings.aiModel,
       maxIterations,
       maxToolCallsPerTurn: maxToolCalls,
       timeoutSeconds: timeout,

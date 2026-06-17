@@ -8,8 +8,8 @@ import com.aitestforge.repository.SubdomainSpecRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class AiBodyGenerator {
 
     private static final int MAX_RETRY = 2;
@@ -34,9 +33,21 @@ public class AiBodyGenerator {
             Respond with ONLY the JSON body, no explanation or markdown formatting.
             Generate realistic Korean test data when appropriate.""";
 
-    private final AiService aiService;
+    private final AiService fastAiService;
+    private final AiService reasoningAiService;
     private final SubdomainSpecRepository subdomainSpecRepository;
     private final ObjectMapper objectMapper;
+
+    public AiBodyGenerator(
+            @Qualifier("fast") AiService fastAiService,
+            @Qualifier("reasoning") AiService reasoningAiService,
+            SubdomainSpecRepository subdomainSpecRepository,
+            ObjectMapper objectMapper) {
+        this.fastAiService = fastAiService;
+        this.reasoningAiService = reasoningAiService;
+        this.subdomainSpecRepository = subdomainSpecRepository;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * AI_GENERATE 전략: 스키마 기반으로 전체 body를 AI가 생성한다.
@@ -147,7 +158,7 @@ public class AiBodyGenerator {
         );
 
         try {
-            AiChatResponse response = aiService.chat(messages, List.of());
+            AiChatResponse response = fastAiService.chat(messages, List.of());
             if (response.message() != null && !response.message().isBlank()) {
                 return extractJsonFromResponse(response.message());
             }
@@ -174,7 +185,7 @@ public class AiBodyGenerator {
             );
 
             try {
-                AiChatResponse response = aiService.chat(messages, List.of());
+                AiChatResponse response = fastAiService.chat(messages, List.of());
                 if (response.message() == null || response.message().isBlank()) {
                     lastError = "Empty response from AI";
                     continue;
@@ -202,8 +213,27 @@ public class AiBodyGenerator {
             }
         }
 
+        // Fallback: reasoning 모델로 1회 재시도
+        log.info("Fast AI body generation exhausted, falling back to reasoning model");
+        try {
+            List<ChatMessage> messages = List.of(
+                    new ChatMessage("system", SYSTEM_PROMPT),
+                    new ChatMessage("user", userPrompt)
+            );
+            AiChatResponse response = reasoningAiService.chat(messages, List.of());
+            if (response.message() != null && !response.message().isBlank()) {
+                String json = extractJsonFromResponse(response.message());
+                if (json != null) {
+                    return json;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Reasoning fallback also failed: {}", e.getMessage());
+        }
+
         throw new AiBodyGenerationException(
-                "AI body generation failed after %d attempts. Last error: %s".formatted(MAX_RETRY + 1, lastError));
+                "AI body generation failed after %d attempts + reasoning fallback. Last error: %s"
+                        .formatted(MAX_RETRY + 1, lastError));
     }
 
     private String getApiSchema(String subdomain, String environment, String method, String path) {

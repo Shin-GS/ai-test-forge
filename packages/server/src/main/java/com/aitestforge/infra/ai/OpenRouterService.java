@@ -9,11 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Service;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
@@ -27,9 +23,6 @@ import java.util.List;
  * OpenRouter를 통해 다양한 모델(GPT, Claude, Gemini, Llama 등)에 접근 가능.
  */
 @Slf4j
-@Service
-@Profile("!local")
-@ConditionalOnProperty(name = "ai.provider", havingValue = "openrouter")
 public class OpenRouterService implements AiService {
 
     private final RestClient restClient;
@@ -37,11 +30,7 @@ public class OpenRouterService implements AiService {
     private final String model;
     private final AiRetryTemplate retryTemplate;
 
-    public OpenRouterService(
-            @Value("${ai.openrouter.api-key}") String apiKey,
-            @Value("${ai.openrouter.model:openai/gpt-4o}") String model,
-            ObjectMapper objectMapper,
-            AiRetryTemplate retryTemplate) {
+    public OpenRouterService(String apiKey, String model, ObjectMapper objectMapper, AiRetryTemplate retryTemplate) {
         this.model = model;
         this.objectMapper = objectMapper;
         this.retryTemplate = retryTemplate;
