@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import Spinner from './Spinner'
 
 describe('Spinner', () => {
-  it('role="status"로 렌더링된다', () => {
+  it('role=status로 렌더링된다', () => {
     render(<Spinner />)
     expect(screen.getByRole('status')).toBeInTheDocument()
   })
@@ -13,9 +13,10 @@ describe('Spinner', () => {
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', '로딩 중')
   })
 
-  it('size에 따라 크기 클래스가 적용된다', () => {
-    const { container } = render(<Spinner size="lg" />)
-    const div = container.querySelector('[role="status"]')!
-    expect(div.className).toContain('h-8')
+  it('size=lg 시 h-8 w-8 클래스가 적용된다', () => {
+    render(<Spinner size="lg" />)
+    const el = screen.getByRole('status')
+    expect(el.className).toContain('h-8')
+    expect(el.className).toContain('w-8')
   })
 })
