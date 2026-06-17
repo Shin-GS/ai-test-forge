@@ -11,6 +11,7 @@ interface AuthState {
   user: User | null
   token: string | null
   login: (email: string, password: string) => Promise<void>
+  setAuth: (token: string, email: string, name: string) => void
   logout: () => void
   hydrate: () => void
 }
@@ -25,12 +26,25 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email, password) => {
     const response = await loginApi({ email, password })
-    const user: User = { email: response.email, name: response.name }
+
+    // OTP 필요 시 토큰이 없으므로 여기서는 처리하지 않음
+    if (response.otpRequired || !response.token) {
+      throw new Error('OTP_REQUIRED')
+    }
+
+    const user: User = { email: response.email!, name: response.name! }
 
     localStorage.setItem(TOKEN_KEY, response.token)
     localStorage.setItem(USER_KEY, JSON.stringify(user))
 
     set({ isAuthenticated: true, user, token: response.token })
+  },
+
+  setAuth: (token, email, name) => {
+    const user: User = { email, name }
+    localStorage.setItem(TOKEN_KEY, token)
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    set({ isAuthenticated: true, user, token })
   },
 
   logout: () => {

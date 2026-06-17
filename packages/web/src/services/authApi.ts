@@ -6,9 +6,10 @@ interface LoginRequest {
 }
 
 interface LoginResponse {
-  token: string
-  email: string
-  name: string
+  token: string | null
+  email: string | null
+  name: string | null
+  otpRequired?: boolean
 }
 
 interface RegisterRequest {
