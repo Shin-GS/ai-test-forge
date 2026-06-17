@@ -1,0 +1,12 @@
+{
+  "name": "ai-test-forge",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter ai-test-forge-web dev",
+    "build:web": "pnpm --filter ai-test-forge-web build",
+    "dev:be": "gradlew :packages:server:bootRun",
+    "build:be": "gradlew :packages:server:bootJar",
+    "build": "pnpm build:web && pnpm build:be"
+  }
+}

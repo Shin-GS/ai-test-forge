@@ -9,12 +9,12 @@ inclusion: always
 ```
 ai-test-forge/
 ├── packages/
-│   ├── server/                          # Spring Boot 메인 서버
+│   ├── server/                          # Spring Boot 메인 서버 (FE 통합 빌드 포함)
 │   │   ├── build.gradle.kts
 │   │   └── src/main/
 │   │       ├── java/com/aitestforge/
 │   │       │   ├── Application.java
-│   │       │   ├── config/              # 설정 (Async, Security, Swagger, WebMvc)
+│   │       │   ├── config/              # 설정 (Security, Swagger, WebMvc, SpaWebConfig)
 │   │       │   ├── controller/          # REST 컨트롤러
 │   │       │   │   ├── auth/            # 메인 서버 인증 엔드포인트
 │   │       │   │   ├── chat/            # 채팅 대화 엔드포인트
@@ -67,6 +67,7 @@ ai-test-forge/
 │   │   ├── package.json
 │   │   ├── vite.config.ts
 │   │   ├── tsconfig.json
+│   │   ├── public/                     # 정적 에셋 (favicon 등, 빌드 시 dist에 포함)
 │   │   └── src/
 │   │       ├── main.tsx
 │   │       ├── App.tsx
@@ -124,6 +125,8 @@ ai-test-forge/
 │       ├── shared/                     # 공통 테스트 인프라
 │       └── web/                        # 기능별 테스트 데이터
 │
+├── package.json                        # 루트 pnpm 워크스페이스 (빌드 스크립트)
+├── pnpm-workspace.yaml                 # pnpm 워크스페이스 설정
 ├── build.gradle.kts                    # 루트 빌드
 ├── settings.gradle.kts                 # 모듈 설정
 ├── .env.example                        # 환경변수 템플릿

@@ -28,13 +28,13 @@ jobs:
           key: gradle-${{ hashFiles('**/*.gradle.kts') }}
 
       - name: Compile Server
-        run: ./gradlew :packages:server:compileJava
+        run: ./gradlew :packages:server:compileJava -x buildFrontend -x copyWeb
 
       - name: Compile Tests
-        run: ./gradlew :packages:server:compileTestJava
+        run: ./gradlew :packages:server:compileTestJava -x buildFrontend -x copyWeb
 
       - name: Run Tests
-        run: ./gradlew :packages:server:test
+        run: ./gradlew :packages:server:test -x buildFrontend -x copyWeb
         continue-on-error: true
 
   web:
@@ -68,3 +68,13 @@ jobs:
       - name: Run Tests
         working-directory: packages/web
         run: pnpm exec vitest run
+
+  docker-build:
+    name: Docker Build (통합 이미지)
+    runs-on: ubuntu-latest
+    needs: [server, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f Dockerfile.server -t ai-test-forge:test .

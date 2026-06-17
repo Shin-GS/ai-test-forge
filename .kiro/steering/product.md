@@ -78,12 +78,13 @@ AI 기반 테스트 데이터 생성 플랫폼.
 ```
 ai-test-forge/
 ├── packages/
-│   ├── server/              # Spring Boot 메인 서버
+│   ├── server/              # Spring Boot 메인 서버 (FE 통합 빌드 포함)
 │   │   ├── src/main/java/
 │   │   ├── src/main/resources/
 │   │   └── build.gradle.kts
 │   ├── web/                 # React 채팅 UI
 │   │   ├── src/
+│   │   ├── public/          # 정적 에셋 (favicon 등, 빌드 시 dist에 포함)
 │   │   ├── package.json
 │   │   └── vite.config.ts
 │   └── client-spring/       # Spring Boot Starter (클라이언트 라이브러리)
@@ -97,6 +98,8 @@ ai-test-forge/
 │   ├── hooks/
 │   ├── specs/
 │   └── steering/
+├── package.json             # 루트 pnpm 워크스페이스 (빌드 스크립트)
+├── pnpm-workspace.yaml      # pnpm 워크스페이스 설정
 ├── .env.example
 ├── build.gradle.kts         # 루트 빌드 (멀티 모듈)
 ├── settings.gradle.kts
@@ -114,13 +117,24 @@ ai-test-forge/
 
 ```bash
 # 서버 (루트 디렉토리에서 실행)
-./gradlew :packages:server:bootRun        # 실행
-./gradlew :packages:server:bootJar        # JAR 빌드
+./gradlew :packages:server:bootRun        # 실행 (FE 빌드 포함)
+./gradlew :packages:server:bootJar        # JAR 빌드 (FE 빌드 → static 복사 → 단일 JAR)
 ./gradlew :packages:server:test           # 테스트
 
-# 웹 UI
-cd packages/web && pnpm dev                    # 개발 서버
-cd packages/web && pnpm build                  # 프로덕션 빌드
+# 서버 (FE 빌드 스킵 — BE만 빠르게 컴파일)
+./gradlew :packages:server:compileJava -x buildFrontend -x copyWeb
+
+# 웹 UI (개발 시 — Vite HMR + API 프록시)
+pnpm dev:web                               # 또는 cd packages/web && pnpm dev
+
+# 웹 UI (수동 빌드)
+pnpm build:web                             # 또는 cd packages/web && pnpm build
+
+# 통합 빌드 (FE+BE 단일 JAR)
+pnpm build                                 # pnpm build:web → gradlew bootJar
+
+# Docker (단일 컨테이너에서 FE+BE 서빙)
+docker compose up -d --build               # 8080 포트에서 모든 것 서빙
 
 # 클라이언트 라이브러리
 ./gradlew :packages:client-spring:build        # 빌드 + 테스트
@@ -153,7 +167,15 @@ cd packages/web && pnpm build                  # 프로덕션 빌드
 
 ## 로컬 개발 환경
 - local 프로필: Mock AI 서비스 (실제 API 호출 없이 시뮬레이션 응답 반환)
-- 웹 개발 모드: Vite 프록시로 API 포워딩
+- 웹 개발 모드: Vite dev server(5173) + API 프록시 → localhost:8080 (HMR 활용)
+- 통합 빌드 모드: `./gradlew bootJar` 실행 시 FE 빌드 → static 복사 → 단일 JAR 생성
+- 배포: Docker 단일 컨테이너 (8080 포트에서 FE+BE 모두 서빙)
+
+## 배포 구조
+- **단일 JAR 배포**: Spring Boot JAR에 React 빌드 결과물이 static resource로 포함
+- **SPA 라우팅**: `SpaWebConfig`가 `/api`, `/health` 외 요청을 `index.html`로 포워딩
+- **정적 에셋**: `packages/web/public/`에 favicon 등 → Vite 빌드 시 `dist/`에 자동 포함
+- **Docker**: 멀티스테이지 빌드 (Node.js → FE 빌드, JDK → BE 빌드, JRE → 실행)
 
 ## 참조 파일
 #[[file:.env.example]]

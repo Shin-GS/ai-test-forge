@@ -22,6 +22,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# === FE 빌드 결과물 (bootJar 빌드 시 자동 생성) ===
+packages/server/src/main/resources/static/
+
 # === OS ===
 .DS_Store
 Thumbs.db
@@ -29,6 +32,3 @@ Thumbs.db
 # === Logs ===
 *.log
 logs/
-
-# === Reference projects (개인 참고용, push 금지) ===
-tg-miniapp-challenge/

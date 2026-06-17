@@ -1,9 +1,22 @@
+FROM node:22-slim AS frontend
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY packages/web/package.json packages/web/
+RUN pnpm install --frozen-lockfile || pnpm install
+COPY packages/web/ packages/web/
+RUN pnpm build:web
+
 FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 COPY gradlew gradlew.bat build.gradle.kts settings.gradle.kts ./
 COPY gradle/ gradle/
-COPY packages/ packages/
-RUN chmod +x gradlew && ./gradlew :packages:server:bootJar -x test
+COPY packages/server/ packages/server/
+COPY packages/client-spring/ packages/client-spring/
+# FE 빌드 결과물을 server static으로 복사
+COPY --from=frontend /app/packages/web/dist/ packages/server/src/main/resources/static/
+# Gradle에서 FE 빌드 스킵 (이미 복사됨)
+RUN chmod +x gradlew && ./gradlew :packages:server:bootJar -x test -x buildFrontend
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app
