@@ -43,3 +43,28 @@ export async function getSpecDetail(
 
   return res.json()
 }
+
+export interface RegisterSpecRequest {
+  name: string
+  environment: string
+  baseUrl: string
+  specJson: string
+}
+
+export async function registerSpec(data: RegisterSpecRequest): Promise<void> {
+  const token = localStorage.getItem('auth_token')
+
+  const res = await fetch(`${API_BASE}/specs/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null)
+    throw new Error(error?.message ?? '스펙 등록에 실패했습니다.')
+  }
+}

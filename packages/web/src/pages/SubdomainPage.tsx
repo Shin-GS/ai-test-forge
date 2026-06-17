@@ -1,13 +1,53 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { getSpecs } from '@/services/specApi'
+import { useState, useRef } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getSpecs, registerSpec } from '@/services/specApi'
 import SubdomainCard from '@/components/subdomain/SubdomainCard'
-import { Button } from '@/components/ui'
+import { Button, Input } from '@/components/ui'
 import { MESSAGES } from '@/constants'
 
 function SubdomainPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showStaleBanner, setShowStaleBanner] = useState(true)
+  const [showUploadForm, setShowUploadForm] = useState(false)
+  const [uploadName, setUploadName] = useState('')
+  const [uploadEnv, setUploadEnv] = useState('dev')
+  const [uploadBaseUrl, setUploadBaseUrl] = useState('')
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const queryClient = useQueryClient()
+
+  const uploadMutation = useMutation({
+    mutationFn: registerSpec,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['specs'] })
+      setShowUploadForm(false)
+      setUploadName('')
+      setUploadEnv('dev')
+      setUploadBaseUrl('')
+      setUploadError(null)
+    },
+    onError: (err: Error) => {
+      setUploadError(err.message)
+    },
+  })
+
+  async function handleFileUpload() {
+    const file = fileInputRef.current?.files?.[0]
+    if (!file || !uploadName.trim() || !uploadBaseUrl.trim()) return
+
+    try {
+      const specJson = await file.text()
+      JSON.parse(specJson) // JSON 유효성 검증
+      uploadMutation.mutate({
+        name: uploadName.trim(),
+        environment: uploadEnv.trim() || 'dev',
+        baseUrl: uploadBaseUrl.trim(),
+        specJson,
+      })
+    } catch {
+      setUploadError('유효한 JSON 파일이 아닙니다.')
+    }
+  }
 
   const {
     data: specs = [],
@@ -81,6 +121,14 @@ function SubdomainPage() {
           >
             {MESSAGES.subdomain.integrationGuide}
           </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            className="ml-2"
+            onClick={() => setShowUploadForm(true)}
+          >
+            📄 수동 등록
+          </Button>
         </div>
       </div>
     )
@@ -114,7 +162,60 @@ function SubdomainPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <Button variant="secondary" size="sm" onClick={() => setShowUploadForm(true)}>
+            📄 수동 등록
+          </Button>
         </div>
+
+        {/* 수동 업로드 폼 */}
+        {showUploadForm && (
+          <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+            <div className="mb-3 text-sm font-medium">OpenAPI JSON 수동 등록</div>
+            <div className="flex flex-col gap-2">
+              <Input
+                placeholder="서브도메인 이름 (예: payment-service)"
+                value={uploadName}
+                onChange={(e) => setUploadName(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="환경 (예: dev)"
+                  value={uploadEnv}
+                  onChange={(e) => setUploadEnv(e.target.value)}
+                  className="flex-1"
+                />
+                <Input
+                  placeholder="Base URL (예: http://localhost:3000)"
+                  value={uploadBaseUrl}
+                  onChange={(e) => setUploadBaseUrl(e.target.value)}
+                  className="flex-[2]"
+                />
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                className="text-sm text-[var(--color-text-secondary)]"
+              />
+              {uploadError && (
+                <p className="text-xs text-[var(--color-error)]">{uploadError}</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleFileUpload}
+                  disabled={!uploadName.trim() || !uploadBaseUrl.trim() || uploadMutation.isPending}
+                >
+                  {uploadMutation.isPending ? '등록 중...' : '등록'}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setShowUploadForm(false); setUploadError(null) }}>
+                  {MESSAGES.common.cancel}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 카드 목록 */}
         <div className="flex flex-col gap-3">
