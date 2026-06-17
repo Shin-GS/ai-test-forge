@@ -35,4 +35,8 @@ public class User {
     @Column(name = "CREATED_AT", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }

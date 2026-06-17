@@ -8,6 +8,7 @@ import {
   deleteWorkspace,
 } from '@/services/workspaceApi'
 import { getSettings, updateSettings } from '@/services/settingsApi'
+import { changePassword } from '@/services/authApi'
 import type { WorkspaceResponse } from '@/types/workspace'
 import { Button, Input } from '@/components/ui'
 import { MESSAGES } from '@/constants'
@@ -509,6 +510,81 @@ function AgentLoopSection() {
   )
 }
 
+function ChangePasswordForm() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [currentPw, setCurrentPw] = useState('')
+  const [newPw, setNewPw] = useState('')
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  const mutation = useMutation({
+    mutationFn: () => changePassword({ currentPassword: currentPw, newPassword: newPw }),
+    onSuccess: () => {
+      setMessage({ type: 'success', text: '비밀번호가 변경되었습니다.' })
+      setCurrentPw('')
+      setNewPw('')
+      window.setTimeout(() => {
+        setIsOpen(false)
+        setMessage(null)
+      }, 2000)
+    },
+    onError: (err: Error) => {
+      setMessage({ type: 'error', text: err.message })
+    },
+  })
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setMessage(null)
+    mutation.mutate()
+  }
+
+  if (!isOpen) {
+    return (
+      <div className="flex items-center justify-between border-t border-[var(--color-border)] py-3">
+        <div className="text-sm font-medium">비밀번호</div>
+        <Button variant="secondary" size="sm" onClick={() => setIsOpen(true)}>
+          비밀번호 변경
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border-t border-[var(--color-border)] py-3">
+      <div className="mb-2 text-sm font-medium">비밀번호 변경</div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+        <Input
+          type="password"
+          placeholder="현재 비밀번호"
+          value={currentPw}
+          onChange={(e) => setCurrentPw(e.target.value)}
+          required
+        />
+        <Input
+          type="password"
+          placeholder="새 비밀번호"
+          value={newPw}
+          onChange={(e) => setNewPw(e.target.value)}
+          required
+        />
+        {message && (
+          <p className={`text-xs ${message.type === 'success' ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
+            {message.text}
+          </p>
+        )}
+        <div className="flex gap-2">
+          <Button variant="primary" size="sm" type="submit" disabled={!currentPw || !newPw || mutation.isPending}>
+            {mutation.isPending ? '변경 중...' : '변경'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { setIsOpen(false); setMessage(null) }}>
+            {MESSAGES.common.cancel}
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 function SettingsPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
@@ -556,6 +632,9 @@ function SettingsPage() {
               {user?.name ?? '-'}
             </div>
           </div>
+
+          {/* 비밀번호 변경 */}
+          <ChangePasswordForm />
 
           {/* 로그아웃 */}
           <div className="mt-8 border-t border-[var(--color-border)] pt-4">

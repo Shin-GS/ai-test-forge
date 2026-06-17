@@ -3,6 +3,7 @@ package com.aitestforge.service.auth;
 import com.aitestforge.common.exception.BusinessException;
 import com.aitestforge.common.exception.ErrorCode;
 import com.aitestforge.domain.auth.User;
+import com.aitestforge.dto.auth.ChangePasswordRequest;
 import com.aitestforge.dto.auth.LoginRequest;
 import com.aitestforge.dto.auth.LoginResponse;
 import com.aitestforge.dto.auth.RegisterRequest;
@@ -59,5 +60,15 @@ public class AuthService {
 
     public UserResponse getCurrentUser(User user) {
         return UserResponse.from(user);
+    }
+
+    @Transactional
+    public void changePassword(User user, ChangePasswordRequest request) {
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
+        }
+
+        user.changePassword(passwordEncoder.encode(request.newPassword()));
+        log.info("Password changed for user: {}", user.getEmail());
     }
 }

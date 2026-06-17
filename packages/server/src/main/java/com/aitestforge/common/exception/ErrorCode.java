@@ -12,7 +12,8 @@ public enum ErrorCode {
     INVALID_INPUT("E002", "잘못된 입력값입니다.", HttpStatus.BAD_REQUEST),
     RESOURCE_NOT_FOUND("E003", "리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     AGENT_LOOP_CONCURRENT_LIMIT("E004", "동시 실행 한도를 초과하였습니다. 잠시 후 다시 시도해 주세요.", HttpStatus.TOO_MANY_REQUESTS),
-    FORBIDDEN("E005", "접근 권한이 없습니다.", HttpStatus.FORBIDDEN);
+    FORBIDDEN("E005", "접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    PASSWORD_MISMATCH("E006", "현재 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
 
     private final String code;
     private final String message;

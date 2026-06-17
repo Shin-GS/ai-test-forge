@@ -36,4 +36,13 @@ public class AuthController {
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(authService.getCurrentUser(user));
     }
+
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다.")
+    @PutMapping("/password")
+    public ResponseEntity<Void> changePassword(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(user, request);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -52,3 +52,21 @@ export async function register(data: RegisterRequest): Promise<RegisterResponse>
 
   return res.json()
 }
+
+interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+}
+
+export async function changePassword(data: ChangePasswordRequest): Promise<void> {
+  const res = await fetch(`${API_BASE}/auth/password`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null)
+    throw new Error(error?.message ?? '비밀번호 변경에 실패했습니다.')
+  }
+}
