@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { ToastContainer } from '@/components/ui'
 import AppLayout from '@/components/layout/AppLayout'
 import ChatPage from '@/pages/ChatPage'
 import SubdomainPage from '@/pages/SubdomainPage'
@@ -33,6 +34,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ToastContainer />
       <Routes>
         <Route
           path="/login"
