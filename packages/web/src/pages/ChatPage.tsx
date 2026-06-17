@@ -40,11 +40,15 @@ function ChatPage() {
     async (message: string) => {
       // 레시피 제안 검색 (새 세션에서만)
       if (!activeSessionId) {
-        const suggestions = await suggestRecipes(message, 3)
-        if (suggestions.length > 0) {
-          setSuggestedRecipes(suggestions)
-          setPendingMessage(message)
-          return
+        try {
+          const suggestions = await suggestRecipes(message, 3)
+          if (suggestions.length > 0) {
+            setSuggestedRecipes(suggestions)
+            setPendingMessage(message)
+            return
+          }
+        } catch {
+          // 제안 검색 실패 시 무시하고 바로 전송
         }
       }
       // 제안 없거나 기존 세션이면 바로 전송
