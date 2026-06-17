@@ -26,6 +26,10 @@ dependencies {
 
     // OTP (TOTP)
     implementation("dev.samstevens.totp:totp:1.7.1")
+
+    // Monitoring
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 }
 
 tasks.withType<Test> {
