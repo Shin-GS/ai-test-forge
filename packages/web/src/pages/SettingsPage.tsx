@@ -6,6 +6,7 @@ import {
   getWorkspaces,
   createWorkspace,
   deleteWorkspace,
+  updateWorkspace,
 } from '@/services/workspaceApi'
 import { getSettings, updateSettings } from '@/services/settingsApi'
 import { changePassword } from '@/services/authApi'
@@ -25,10 +26,25 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
     },
   })
 
+  const updateMutation = useMutation({
+    mutationFn: (mappings: { subdomainName: string; environment: string }[]) =>
+      updateWorkspace(workspace.id, { mappings }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspaces'] })
+    },
+  })
+
   function handleDelete() {
     if (window.confirm(MESSAGES.settings.workspace.confirmDelete(workspace.name))) {
       deleteMutation.mutate()
     }
+  }
+
+  function handleEnvironmentChange(subdomainName: string, newEnv: string) {
+    const updatedMappings = workspace.mappings.map((m) =>
+      m.subdomainName === subdomainName ? { ...m, environment: newEnv } : m,
+    )
+    updateMutation.mutate(updatedMappings)
   }
 
   return (
@@ -73,8 +89,21 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
                 <td className="py-1.5 text-[var(--color-text-primary)]">
                   {mapping.subdomainName}
                 </td>
-                <td className="py-1.5 text-[var(--color-text-secondary)]">
-                  {mapping.environment}
+                <td className="py-1.5">
+                  <input
+                    type="text"
+                    defaultValue={mapping.environment}
+                    onBlur={(e) => {
+                      const newVal = e.target.value.trim()
+                      if (newVal && newVal !== mapping.environment) {
+                        handleEnvironmentChange(mapping.subdomainName, newVal)
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                    }}
+                    className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 text-sm text-[var(--color-text-secondary)] outline-none hover:border-[var(--color-border)] focus:border-[var(--color-accent)] focus:bg-[var(--color-bg-tertiary)]"
+                  />
                 </td>
               </tr>
             ))}
