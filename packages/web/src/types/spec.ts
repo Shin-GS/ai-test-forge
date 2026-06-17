@@ -7,8 +7,14 @@ export interface SpecResponse {
   baseUrl: string
   status: SpecStatus
   description: string | null
+  authProfiles: AuthProfileDto[]
   registeredAt: string
   lastHeartbeatAt: string
+}
+
+export interface AuthProfileDto {
+  name: string
+  loginPageUrl: string
 }
 
 export interface ApiEndpointResponse {
@@ -16,6 +22,12 @@ export interface ApiEndpointResponse {
   path: string
   summary: string
   tag: string
+}
+
+export interface ExcludedApiResponse {
+  method: string
+  path: string
+  reason: string
 }
 
 export interface SpecDetailResponse {
@@ -27,6 +39,8 @@ export interface SpecDetailResponse {
   description: string | null
   apiCount: number
   endpoints: ApiEndpointResponse[]
+  authProfiles: AuthProfileDto[]
+  excludedApis: ExcludedApiResponse[]
   registeredAt: string
   lastHeartbeatAt: string
 }

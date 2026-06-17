@@ -3,15 +3,16 @@
 export interface SessionResponse {
   id: number
   title: string
+  status: 'ACTIVE' | 'COMPLETED' | 'WAITING'
   createdAt: string
   updatedAt: string
 }
 
 export interface MessageResponse {
   id: number
-  sessionId: number
   role: 'USER' | 'ASSISTANT' | 'SYSTEM'
   content: string
+  toolCallId: string | null
   createdAt: string
 }
 

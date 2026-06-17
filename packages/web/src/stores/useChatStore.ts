@@ -85,9 +85,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // 사용자 메시지를 로컬에 추가
       const userMsg: MessageResponse = {
         id: Date.now(),
-        sessionId: session.id,
         role: 'USER',
         content: message,
+        toolCallId: null,
         createdAt: new Date().toISOString(),
       }
       set((state) => ({
@@ -129,9 +129,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // 사용자 메시지를 로컬에 추가
       const userMsg: MessageResponse = {
         id: Date.now(),
-        sessionId: activeSessionId,
         role: 'USER',
         content: message,
+        toolCallId: null,
         createdAt: new Date().toISOString(),
       }
       set((state) => ({
@@ -175,9 +175,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // 채팅 화면으로 전환: 세션 해제 + 시스템 메시지 표시
     const systemMsg: MessageResponse = {
       id: Date.now(),
-      sessionId: 0,
       role: 'SYSTEM',
       content: `📋 레시피 '${recipeName}' 실행`,
+      toolCallId: null,
       createdAt: new Date().toISOString(),
     }
 
@@ -200,9 +200,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
         onError: (error) => {
           const errorMsg: MessageResponse = {
             id: Date.now(),
-            sessionId: 0,
             role: 'ASSISTANT',
             content: `❌ 레시피 실행 실패: ${error.message}`,
+            toolCallId: null,
             createdAt: new Date().toISOString(),
           }
           set((state) => ({
@@ -223,9 +223,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       case 'message': {
         const aiMessage: MessageResponse = {
           id: Date.now(),
-          sessionId: get().activeSessionId ?? 0,
           role: 'ASSISTANT',
           content: event.content,
+          toolCallId: null,
           createdAt: new Date().toISOString(),
         }
         set((state) => ({

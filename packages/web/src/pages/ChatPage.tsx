@@ -9,6 +9,7 @@ import Onboarding from '@/components/chat/Onboarding'
 import MessageBubble from '@/components/chat/MessageBubble'
 import ToolCallProgress from '@/components/chat/ToolCallProgress'
 import AuthRequiredAlert from '@/components/chat/AuthRequiredAlert'
+import ToolCallConfirmDialog from '@/components/chat/ToolCallConfirmDialog'
 import ChatInputBar from '@/components/chat/ChatInputBar'
 import { Button } from '@/components/ui'
 
@@ -26,9 +27,10 @@ function ChatPage() {
   // Agent Runner 상태 (인증 필요 감지)
   const pauseReason = useAgentRunnerStore((s) => s.pauseReason)
   const pauseData = useAgentRunnerStore((s) => s.pauseData)
-  const { resume } = useAgentRunner()
+  const { resume, confirmToolCall, rejectToolCall } = useAgentRunner()
 
   const isAuthRequired = pauseReason === 'auth'
+  const isConfirmRequired = pauseReason === 'confirm'
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -160,6 +162,15 @@ function ChatPage() {
                 <AuthRequiredAlert pauseData={pauseData} onResume={resume} />
               )}
 
+              {/* Tool Call 확인 다이얼로그 */}
+              {isConfirmRequired && pauseData?.toolCall && (
+                <ToolCallConfirmDialog
+                  toolCall={pauseData.toolCall}
+                  onConfirm={() => confirmToolCall(pauseData.toolCall!)}
+                  onReject={() => rejectToolCall(pauseData.toolCall!)}
+                />
+              )}
+
               {/* 레시피 제안 */}
               {suggestedRecipes.length > 0 && (
                 <div className="mx-auto my-4 max-w-[600px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
@@ -206,8 +217,12 @@ function ChatPage() {
         <ChatInputBar
           onSend={handleSend}
           isLoading={isLoading}
-          disabled={isAuthRequired}
-          disabledPlaceholder="로그인 후 '계속 진행' 버튼을 눌러주세요"
+          disabled={isAuthRequired || isConfirmRequired}
+          disabledPlaceholder={
+            isAuthRequired
+              ? "로그인 후 '계속 진행' 버튼을 눌러주세요"
+              : "API 실행 확인 대기 중..."
+          }
         />
       </div>
     </div>
