@@ -15,11 +15,13 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   { icon: '🔑', label: '어드민 계정 생성', message: '어드민 계정 테스트 데이터 만들어줘' },
 ]
 
+import { MESSAGES } from '@/constants'
+
 function Onboarding({ onQuickAction }: OnboardingProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
       <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">
-        🚀 빠른 시작
+        {MESSAGES.chat.onboardingTitle}
       </h2>
 
       <div className="flex flex-wrap justify-center gap-3">
@@ -36,7 +38,7 @@ function Onboarding({ onQuickAction }: OnboardingProps) {
       </div>
 
       <p className="text-sm text-[var(--color-text-tertiary)]">
-        또는 자유롭게 입력하세요...
+        {MESSAGES.chat.onboardingHint}
       </p>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { MESSAGES } from '@/constants'
 
 interface ChatInputBarProps {
   onSend: (message: string) => void
@@ -56,7 +57,7 @@ function ChatInputBar({ onSend, isLoading }: ChatInputBarProps) {
           onKeyDown={handleKeyDown}
           disabled={isLoading}
           placeholder={
-            isLoading ? 'AI 응답 대기 중...' : '메시지를 입력하세요...'
+            isLoading ? MESSAGES.chat.inputLoading : MESSAGES.chat.inputPlaceholder
           }
           rows={1}
           className="flex-1 resize-none rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-3 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] outline-none transition-[border-color] focus:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
@@ -67,7 +68,7 @@ function ChatInputBar({ onSend, isLoading }: ChatInputBarProps) {
           disabled={!canSend}
           className="flex h-11 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          전송
+          {MESSAGES.chat.sendButton}
         </button>
       </div>
     </div>

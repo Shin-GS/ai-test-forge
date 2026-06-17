@@ -1,4 +1,5 @@
 import type { SessionResponse } from '@/types/chat'
+import { MESSAGES } from '@/constants'
 
 interface SessionSidebarProps {
   sessions: SessionResponse[]
@@ -62,7 +63,7 @@ function SessionSidebar({
           onClick={onNewChat}
           className="w-full rounded-lg bg-transparent px-3 py-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)]"
         >
-          + 새 대화
+          {MESSAGES.chat.newChat}
         </button>
       </div>
     </aside>

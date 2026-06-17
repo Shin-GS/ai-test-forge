@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { Button, Input } from '@/components/ui'
+import { MESSAGES } from '@/constants'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -24,7 +25,7 @@ function LoginPage() {
       const message =
         err instanceof Error
           ? err.message
-          : '이메일 또는 비밀번호가 올바르지 않습니다.'
+          : MESSAGES.auth.loginFailed
       setError(message)
       setPassword('')
     } finally {
@@ -39,10 +40,10 @@ function LoginPage() {
         <div className="mb-6 text-center">
           <div className="text-[2rem]">🔨</div>
           <h1 className="mt-2 text-xl font-bold text-[var(--color-text-primary)]">
-            AI Test Forge
+            {MESSAGES.auth.loginTitle}
           </h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            테스트 데이터 생성 플랫폼
+            {MESSAGES.auth.loginSubtitle}
           </p>
         </div>
 
@@ -60,14 +61,14 @@ function LoginPage() {
               htmlFor="email"
               className="mb-1 block text-sm font-medium text-[var(--color-text-secondary)]"
             >
-              이메일
+              {MESSAGES.auth.emailLabel}
             </label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@company.com"
+              placeholder={MESSAGES.auth.emailPlaceholder}
               required
               autoComplete="email"
             />
@@ -78,14 +79,14 @@ function LoginPage() {
               htmlFor="password"
               className="mb-1 block text-sm font-medium text-[var(--color-text-secondary)]"
             >
-              비밀번호
+              {MESSAGES.auth.passwordLabel}
             </label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호 입력"
+              placeholder={MESSAGES.auth.passwordPlaceholder}
               required
               autoComplete="current-password"
             />
@@ -98,7 +99,7 @@ function LoginPage() {
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading ? '로그인 중...' : '로그인'}
+            {isLoading ? MESSAGES.auth.loginLoading : MESSAGES.auth.loginButton}
           </Button>
         </form>
       </div>

@@ -9,6 +9,7 @@ import {
 } from '@/services/workspaceApi'
 import type { WorkspaceResponse } from '@/types/workspace'
 import { Button, Input } from '@/components/ui'
+import { MESSAGES } from '@/constants'
 
 function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
   const queryClient = useQueryClient()
@@ -21,7 +22,7 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
   })
 
   function handleDelete() {
-    if (window.confirm(`"${workspace.name}" 워크스페이스를 삭제하시겠습니까?`)) {
+    if (window.confirm(MESSAGES.settings.workspace.confirmDelete(workspace.name))) {
       deleteMutation.mutate()
     }
   }
@@ -33,7 +34,7 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
           <span className="text-sm font-medium">{workspace.name}</span>
           {workspace.isDefault && (
             <span className="rounded bg-[var(--color-accent)] px-1.5 py-0.5 text-xs text-white">
-              기본
+              {MESSAGES.settings.workspace.default}
             </span>
           )}
         </div>
@@ -43,7 +44,7 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
           onClick={handleDelete}
           className="cursor-pointer rounded px-2 py-1 text-xs text-[var(--color-error)] hover:bg-[var(--color-error-subtle)] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {deleteMutation.isPending ? '삭제 중...' : '삭제'}
+          {deleteMutation.isPending ? MESSAGES.settings.workspace.deleting : MESSAGES.common.delete}
         </button>
       </div>
 
@@ -79,7 +80,7 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceResponse }) {
 
       {workspace.mappings.length === 0 && (
         <p className="text-xs text-[var(--color-text-tertiary)]">
-          매핑된 서브도메인이 없습니다.
+          {MESSAGES.settings.workspace.emptyMappings}
         </p>
       )}
     </div>
@@ -129,14 +130,14 @@ function WorkspaceSection() {
       {/* 로딩 상태 */}
       {isLoading && (
         <p className="text-sm text-[var(--color-text-tertiary)]">
-          워크스페이스를 불러오는 중...
+          {MESSAGES.settings.workspace.loading}
         </p>
       )}
 
       {/* 에러 상태 */}
       {isError && (
         <p className="text-sm text-[var(--color-error)]">
-          {error instanceof Error ? error.message : '워크스페이스를 불러올 수 없습니다.'}
+          {error instanceof Error ? error.message : MESSAGES.settings.workspace.loadError}
         </p>
       )}
 
@@ -152,7 +153,7 @@ function WorkspaceSection() {
       {/* 빈 상태 */}
       {workspaces && workspaces.length === 0 && (
         <p className="mb-3 text-sm text-[var(--color-text-tertiary)]">
-          등록된 워크스페이스가 없습니다.
+          {MESSAGES.settings.workspace.empty}
         </p>
       )}
 
@@ -164,7 +165,7 @@ function WorkspaceSection() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="워크스페이스 이름"
+            placeholder={MESSAGES.settings.workspace.namePlaceholder}
             autoFocus
             className="flex-1"
           />
@@ -174,7 +175,7 @@ function WorkspaceSection() {
             onClick={handleCreate}
             disabled={!newName.trim() || createMutation.isPending}
           >
-            {createMutation.isPending ? '생성 중...' : '확인'}
+            {createMutation.isPending ? MESSAGES.settings.workspace.creating : MESSAGES.common.confirm}
           </Button>
           <Button
             variant="ghost"
@@ -184,7 +185,7 @@ function WorkspaceSection() {
               setNewName('')
             }}
           >
-            취소
+            {MESSAGES.common.cancel}
           </Button>
         </div>
       ) : (
@@ -193,7 +194,7 @@ function WorkspaceSection() {
           size="sm"
           onClick={() => setIsCreating(true)}
         >
-          + 새 워크스페이스
+          {MESSAGES.settings.workspace.createButton}
         </Button>
       )}
 
@@ -202,7 +203,7 @@ function WorkspaceSection() {
         <p className="mt-2 text-xs text-[var(--color-error)]">
           {createMutation.error instanceof Error
             ? createMutation.error.message
-            : '생성에 실패했습니다.'}
+            : MESSAGES.settings.workspace.createFailed}
         </p>
       )}
     </section>
@@ -258,7 +259,7 @@ function SettingsPage() {
               size="md"
               onClick={handleLogout}
             >
-              로그아웃
+              {MESSAGES.auth.logout}
             </Button>
           </div>
         </section>

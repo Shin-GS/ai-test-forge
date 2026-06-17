@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { getRecipes } from '@/services/recipeApi'
 import RecipeCard from '@/components/recipe/RecipeCard'
 import { Button } from '@/components/ui'
+import { MESSAGES } from '@/constants'
 
 function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -39,7 +40,7 @@ function RecipePage() {
     return (
       <div className="flex flex-1 items-center justify-center overflow-y-auto p-6">
         <div className="text-sm text-[var(--color-text-secondary)]">
-          레시피 목록을 불러오는 중...
+          {MESSAGES.recipe.loading}
         </div>
       </div>
     )
@@ -52,12 +53,12 @@ function RecipePage() {
         <div className="text-center">
           <div className="mb-2 text-3xl">❌</div>
           <div className="mb-1 text-lg font-semibold">
-            데이터를 불러올 수 없습니다
+            {MESSAGES.common.fetchError}
           </div>
           <p className="text-sm text-[var(--color-text-secondary)]">
             {error instanceof Error
               ? error.message
-              : '알 수 없는 오류가 발생했습니다.'}
+              : MESSAGES.common.unknownError}
           </p>
         </div>
       </div>
@@ -71,17 +72,17 @@ function RecipePage() {
         <div className="flex flex-col items-center p-12 text-center">
           <div className="mb-4 text-5xl">📋</div>
           <h2 className="mb-2 text-lg font-semibold">
-            저장된 레시피가 없습니다
+            {MESSAGES.recipe.emptyTitle}
           </h2>
           <p className="mb-4 max-w-[400px] text-sm text-[var(--color-text-secondary)]">
-            채팅에서 작업 후 "레시피로 저장해줘"라고 말해보세요.
+            {MESSAGES.recipe.emptyDescription}
           </p>
           <Button
             variant="primary"
             size="md"
             onClick={() => navigate('/')}
           >
-            💬 채팅으로 이동
+            {MESSAGES.recipe.goToChat}
           </Button>
         </div>
       </div>
@@ -97,7 +98,7 @@ function RecipePage() {
           <input
             type="text"
             className="max-w-[300px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] focus:outline-none"
-            placeholder="🔍 레시피 검색..."
+            placeholder={MESSAGES.recipe.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -107,7 +108,7 @@ function RecipePage() {
         {frequentRecipes.length > 0 && (
           <>
             <h3 className="mb-3 text-sm font-medium text-[var(--color-text-tertiary)]">
-              ⭐ 자주 사용
+              {MESSAGES.recipe.frequentTitle}
             </h3>
             <div className="mb-6 flex flex-col gap-3">
               {frequentRecipes.map((recipe) => (
@@ -119,7 +120,7 @@ function RecipePage() {
 
         {/* 전체 섹션 */}
         <h3 className="mb-3 mt-6 text-sm font-medium text-[var(--color-text-tertiary)]">
-          전체
+          {MESSAGES.recipe.allTitle}
         </h3>
         <div className="flex flex-col gap-3">
           {filteredRecipes.map((recipe) => (
@@ -130,7 +131,7 @@ function RecipePage() {
         {/* 검색 결과 없음 */}
         {filteredRecipes.length === 0 && searchQuery && (
           <div className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">
-            "{searchQuery}"에 대한 검색 결과가 없습니다.
+            {MESSAGES.recipe.noSearchResult(searchQuery)}
           </div>
         )}
       </div>

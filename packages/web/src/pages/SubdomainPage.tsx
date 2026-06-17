@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getSpecs } from '@/services/specApi'
 import SubdomainCard from '@/components/subdomain/SubdomainCard'
 import { Button } from '@/components/ui'
+import { MESSAGES } from '@/constants'
 
 function SubdomainPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -37,7 +38,7 @@ function SubdomainPage() {
     return (
       <div className="flex flex-1 items-center justify-center overflow-y-auto p-6">
         <div className="text-sm text-[var(--color-text-secondary)]">
-          서브도메인 목록을 불러오는 중...
+          {MESSAGES.subdomain.loading}
         </div>
       </div>
     )
@@ -50,12 +51,12 @@ function SubdomainPage() {
         <div className="text-center">
           <div className="mb-2 text-3xl">❌</div>
           <div className="mb-1 text-lg font-semibold">
-            데이터를 불러올 수 없습니다
+            {MESSAGES.common.fetchError}
           </div>
           <p className="text-sm text-[var(--color-text-secondary)]">
             {error instanceof Error
               ? error.message
-              : '알 수 없는 오류가 발생했습니다.'}
+              : MESSAGES.common.unknownError}
           </p>
         </div>
       </div>
@@ -69,17 +70,16 @@ function SubdomainPage() {
         <div className="flex flex-col items-center text-center">
           <div className="mb-4 text-5xl">📡</div>
           <h2 className="mb-2 text-lg font-semibold">
-            등록된 서브도메인이 없습니다
+            {MESSAGES.subdomain.emptyTitle}
           </h2>
           <p className="mb-4 max-w-[400px] text-sm text-[var(--color-text-secondary)]">
-            서브도메인 서버에 클라이언트 라이브러리를 추가하면 자동으로
-            등록됩니다.
+            {MESSAGES.subdomain.emptyDescription}
           </p>
           <Button
             variant="primary"
             size="md"
           >
-            연동 가이드 보기
+            {MESSAGES.subdomain.integrationGuide}
           </Button>
         </div>
       </div>
@@ -93,7 +93,7 @@ function SubdomainPage() {
         {/* STALE 경고 배너 (Case 4) */}
         {staleCount > 0 && showStaleBanner && (
           <div className="mb-4 flex items-center justify-between rounded-md border border-[rgba(245,158,11,0.3)] bg-[var(--color-warning-subtle)] px-4 py-3 text-sm">
-            <span>⚠️ {staleCount}개 서버의 연결이 불안정합니다</span>
+            <span>{MESSAGES.subdomain.staleWarning(staleCount)}</span>
             <button
               type="button"
               className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
@@ -110,7 +110,7 @@ function SubdomainPage() {
           <input
             type="text"
             className="max-w-[300px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent)] focus:outline-none"
-            placeholder="🔍 서버 검색..."
+            placeholder={MESSAGES.subdomain.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -126,7 +126,7 @@ function SubdomainPage() {
         {/* 검색 결과 없음 */}
         {filteredSpecs.length === 0 && searchQuery && (
           <div className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">
-            "{searchQuery}"에 대한 검색 결과가 없습니다.
+            {MESSAGES.subdomain.noSearchResult(searchQuery)}
           </div>
         )}
       </div>
