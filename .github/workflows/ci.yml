@@ -59,7 +59,7 @@ jobs:
 
       - name: Type Check
         working-directory: packages/web
-        run: pnpm exec tsc --noEmit
+        run: pnpm exec tsc -p tsconfig.app.json --noEmit
 
       - name: Build
         working-directory: packages/web
