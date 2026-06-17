@@ -163,3 +163,20 @@ async function parseSseStream(
     callbacks.onError(err instanceof Error ? err : new Error('스트림 읽기 오류'))
   }
 }
+
+/**
+ * 사용자 요청 텍스트와 유사한 레시피를 검색한다.
+ */
+export async function suggestRecipes(
+  query: string,
+  maxResults = 3,
+): Promise<RecipeResponse[]> {
+  const params = new URLSearchParams({ query, maxResults: String(maxResults) })
+  const res = await fetch(`${API_BASE}/recipes/suggest?${params}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  })
+
+  if (!res.ok) return []
+  return res.json()
+}

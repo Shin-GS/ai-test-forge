@@ -1,10 +1,13 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useChatStore } from '@/stores/useChatStore'
+import { suggestRecipes } from '@/services/recipeApi'
+import type { RecipeResponse } from '@/types/recipe'
 import SessionSidebar from '@/components/chat/SessionSidebar'
 import Onboarding from '@/components/chat/Onboarding'
 import MessageBubble from '@/components/chat/MessageBubble'
 import ToolCallProgress from '@/components/chat/ToolCallProgress'
 import ChatInputBar from '@/components/chat/ChatInputBar'
+import { Button } from '@/components/ui'
 
 function ChatPage() {
   const sessions = useChatStore((s) => s.sessions)
@@ -19,6 +22,10 @@ function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // 레시피 제안 상태
+  const [suggestedRecipes, setSuggestedRecipes] = useState<RecipeResponse[]>([])
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null)
+
   // 초기 세션 목록 로드
   useEffect(() => {
     fetchSessions()
@@ -30,7 +37,26 @@ function ChatPage() {
   }, [messages, toolCalls])
 
   const handleSend = useCallback(
+    async (message: string) => {
+      // 레시피 제안 검색 (새 세션에서만)
+      if (!activeSessionId) {
+        const suggestions = await suggestRecipes(message, 3)
+        if (suggestions.length > 0) {
+          setSuggestedRecipes(suggestions)
+          setPendingMessage(message)
+          return
+        }
+      }
+      // 제안 없거나 기존 세션이면 바로 전송
+      proceedWithMessage(message)
+    },
+    [activeSessionId]
+  )
+
+  const proceedWithMessage = useCallback(
     (message: string) => {
+      setSuggestedRecipes([])
+      setPendingMessage(null)
       if (activeSessionId) {
         sendUserMessage(message)
       } else {
@@ -39,6 +65,21 @@ function ChatPage() {
     },
     [activeSessionId, sendUserMessage, startNewChat]
   )
+
+  const handleUseRecipe = useCallback(
+    (recipe: RecipeResponse) => {
+      setSuggestedRecipes([])
+      setPendingMessage(null)
+      useChatStore.getState().executeRecipe(recipe.id, recipe.name, {})
+    },
+    []
+  )
+
+  const handleSkipSuggestion = useCallback(() => {
+    if (pendingMessage) {
+      proceedWithMessage(pendingMessage)
+    }
+  }, [pendingMessage, proceedWithMessage])
 
   const handleNewChat = useCallback(() => {
     useChatStore.setState({
@@ -96,6 +137,42 @@ function ChatPage() {
                   </div>
                   <div className="max-w-[70%]">
                     <ToolCallProgress toolCalls={toolCalls} />
+                  </div>
+                </div>
+              )}
+
+              {/* 레시피 제안 */}
+              {suggestedRecipes.length > 0 && (
+                <div className="mx-auto my-4 max-w-[600px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+                  <div className="mb-3 text-sm font-medium text-[var(--color-text-primary)]">
+                    📋 유사한 레시피가 있습니다
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {suggestedRecipes.map((recipe) => (
+                      <div
+                        key={recipe.id}
+                        className="flex items-center justify-between rounded-md bg-[var(--color-bg-tertiary)] px-3 py-2"
+                      >
+                        <div>
+                          <div className="text-sm font-medium">{recipe.name}</div>
+                          <div className="text-xs text-[var(--color-text-tertiary)]">
+                            {recipe.description}
+                          </div>
+                        </div>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleUseRecipe(recipe)}
+                        >
+                          레시피 실행
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3">
+                    <Button variant="ghost" size="sm" onClick={handleSkipSuggestion}>
+                      새로 대화로 진행 →
+                    </Button>
                   </div>
                 </div>
               )}
