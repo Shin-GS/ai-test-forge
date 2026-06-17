@@ -1,10 +1,10 @@
 package com.aitestforge.controller.spec;
 
-import com.aitestforge.domain.spec.SpecStatus;
-import com.aitestforge.dto.spec.SpecDetailResponse;
-import com.aitestforge.dto.spec.SpecRegisterRequest;
-import com.aitestforge.dto.spec.SpecRegisterResponse;
-import com.aitestforge.dto.spec.SpecResponse;
+import com.aitestforge.domain.spec.enums.SpecStatus;
+import com.aitestforge.dto.spec.request.SpecRegisterRequest;
+import com.aitestforge.dto.spec.response.SpecDetailResponse;
+import com.aitestforge.dto.spec.response.SpecRegisterResponse;
+import com.aitestforge.dto.spec.response.SpecResponse;
 import com.aitestforge.service.spec.SpecService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

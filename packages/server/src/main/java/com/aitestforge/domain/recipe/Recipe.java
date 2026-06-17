@@ -1,5 +1,7 @@
 package com.aitestforge.domain.recipe;
 
+import com.aitestforge.domain.recipe.enums.RecipeValidationStatus;
+import com.aitestforge.domain.recipe.enums.RecipeVisibility;
 import jakarta.persistence.*;
 import lombok.*;
 

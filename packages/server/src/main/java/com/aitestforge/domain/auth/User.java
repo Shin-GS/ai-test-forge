@@ -1,5 +1,6 @@
 package com.aitestforge.domain.auth;
 
+import com.aitestforge.domain.auth.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 

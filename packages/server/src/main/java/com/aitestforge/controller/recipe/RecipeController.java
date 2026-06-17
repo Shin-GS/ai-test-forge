@@ -1,12 +1,12 @@
 package com.aitestforge.controller.recipe;
 
 import com.aitestforge.domain.auth.User;
-import com.aitestforge.dto.recipe.CreateRecipeRequest;
-import com.aitestforge.dto.recipe.ExecuteRecipeRequest;
-import com.aitestforge.dto.recipe.GenerateRecipeFromSessionRequest;
-import com.aitestforge.dto.recipe.RecipeResponse;
-import com.aitestforge.dto.recipe.RecipeValidationResult;
-import com.aitestforge.dto.recipe.UpdateRecipeRequest;
+import com.aitestforge.dto.recipe.request.CreateRecipeRequest;
+import com.aitestforge.dto.recipe.request.ExecuteRecipeRequest;
+import com.aitestforge.dto.recipe.request.GenerateRecipeFromSessionRequest;
+import com.aitestforge.dto.recipe.request.UpdateRecipeRequest;
+import com.aitestforge.dto.recipe.response.RecipeResponse;
+import com.aitestforge.dto.recipe.response.RecipeValidationResult;
 import com.aitestforge.service.recipe.RecipeExecutionService;
 import com.aitestforge.service.recipe.RecipeSaverService;
 import com.aitestforge.service.recipe.RecipeService;

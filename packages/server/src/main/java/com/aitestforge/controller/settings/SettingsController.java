@@ -1,7 +1,7 @@
 package com.aitestforge.controller.settings;
 
-import com.aitestforge.dto.settings.SettingsResponse;
-import com.aitestforge.dto.settings.UpdateSettingsRequest;
+import com.aitestforge.dto.settings.response.SettingsResponse;
+import com.aitestforge.dto.settings.request.UpdateSettingsRequest;
 import com.aitestforge.service.settings.SettingsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

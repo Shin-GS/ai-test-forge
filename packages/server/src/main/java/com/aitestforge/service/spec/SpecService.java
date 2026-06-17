@@ -2,9 +2,13 @@ package com.aitestforge.service.spec;
 
 import com.aitestforge.common.exception.BusinessException;
 import com.aitestforge.common.exception.ErrorCode;
-import com.aitestforge.domain.spec.SpecStatus;
+import com.aitestforge.domain.spec.enums.SpecStatus;
 import com.aitestforge.domain.spec.SubdomainSpec;
-import com.aitestforge.dto.spec.*;
+import com.aitestforge.dto.spec.request.SpecRegisterRequest;
+import com.aitestforge.dto.spec.response.ApiEndpointResponse;
+import com.aitestforge.dto.spec.response.SpecDetailResponse;
+import com.aitestforge.dto.spec.response.SpecRegisterResponse;
+import com.aitestforge.dto.spec.response.SpecResponse;
 import com.aitestforge.repository.SubdomainSpecRepository;
 import com.aitestforge.service.recipe.RecipeSpecValidator;
 import com.fasterxml.jackson.databind.JsonNode;

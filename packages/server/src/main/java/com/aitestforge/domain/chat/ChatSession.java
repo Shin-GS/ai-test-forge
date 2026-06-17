@@ -1,5 +1,6 @@
 package com.aitestforge.domain.chat;
 
+import com.aitestforge.domain.chat.enums.SessionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

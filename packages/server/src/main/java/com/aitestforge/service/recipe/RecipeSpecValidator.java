@@ -1,9 +1,9 @@
 package com.aitestforge.service.recipe;
 
 import com.aitestforge.domain.recipe.Recipe;
-import com.aitestforge.domain.recipe.RecipeValidationStatus;
+import com.aitestforge.domain.recipe.enums.RecipeValidationStatus;
 import com.aitestforge.domain.spec.SubdomainSpec;
-import com.aitestforge.dto.recipe.RecipeValidationResult;
+import com.aitestforge.dto.recipe.response.RecipeValidationResult;
 import com.aitestforge.dto.recipe.ValidationIssue;
 import com.aitestforge.dto.recipe.ValidationIssueType;
 import com.aitestforge.repository.RecipeRepository;

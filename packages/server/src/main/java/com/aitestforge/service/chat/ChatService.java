@@ -4,10 +4,11 @@ import com.aitestforge.common.exception.BusinessException;
 import com.aitestforge.common.exception.ErrorCode;
 import com.aitestforge.domain.chat.ChatMessage;
 import com.aitestforge.domain.chat.ChatSession;
-import com.aitestforge.domain.chat.MessageRole;
-import com.aitestforge.dto.chat.CreateSessionRequest;
-import com.aitestforge.dto.chat.MessageResponse;
-import com.aitestforge.dto.chat.SessionResponse;
+import com.aitestforge.domain.chat.enums.MessageRole;
+import com.aitestforge.domain.chat.enums.SessionStatus;
+import com.aitestforge.dto.chat.request.CreateSessionRequest;
+import com.aitestforge.dto.chat.response.MessageResponse;
+import com.aitestforge.dto.chat.response.SessionResponse;
 import com.aitestforge.repository.ChatMessageRepository;
 import com.aitestforge.repository.ChatSessionRepository;
 import lombok.RequiredArgsConstructor;
@@ -111,7 +112,7 @@ public class ChatService {
 
     public boolean isWaiting(Long sessionId) {
         ChatSession session = findSessionOrThrow(sessionId);
-        return session.getStatus() == com.aitestforge.domain.chat.SessionStatus.WAITING;
+        return session.getStatus() == SessionStatus.WAITING;
     }
 
     private ChatSession findSessionOrThrow(Long sessionId) {

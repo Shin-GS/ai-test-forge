@@ -1,5 +1,7 @@
 package com.aitestforge.domain.chat;
 
+import com.aitestforge.domain.chat.enums.MessageRole;
+import com.aitestforge.domain.chat.enums.SessionStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

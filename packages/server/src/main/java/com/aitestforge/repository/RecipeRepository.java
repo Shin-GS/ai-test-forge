@@ -1,7 +1,7 @@
 package com.aitestforge.repository;
 
 import com.aitestforge.domain.recipe.Recipe;
-import com.aitestforge.domain.recipe.RecipeVisibility;
+import com.aitestforge.domain.recipe.enums.RecipeVisibility;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

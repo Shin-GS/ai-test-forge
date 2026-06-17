@@ -1,9 +1,9 @@
 package com.aitestforge.controller.workspace;
 
 import com.aitestforge.domain.auth.User;
-import com.aitestforge.dto.workspace.CreateWorkspaceRequest;
-import com.aitestforge.dto.workspace.UpdateWorkspaceRequest;
-import com.aitestforge.dto.workspace.WorkspaceResponse;
+import com.aitestforge.dto.workspace.request.CreateWorkspaceRequest;
+import com.aitestforge.dto.workspace.request.UpdateWorkspaceRequest;
+import com.aitestforge.dto.workspace.response.WorkspaceResponse;
 import com.aitestforge.service.workspace.WorkspaceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

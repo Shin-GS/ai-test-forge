@@ -1,9 +1,9 @@
 package com.aitestforge.service.agent;
 
 import com.aitestforge.domain.chat.ChatSession;
-import com.aitestforge.domain.spec.SpecStatus;
+import com.aitestforge.domain.spec.enums.SpecStatus;
 import com.aitestforge.domain.spec.SubdomainSpec;
-import com.aitestforge.dto.chat.ToolResultRequest;
+import com.aitestforge.dto.chat.request.ToolResultRequest;
 import com.aitestforge.dto.workspace.WorkspaceMappingDto;
 import com.aitestforge.infra.ai.AiService;
 import com.aitestforge.infra.ai.dto.AiChatResponse;

@@ -1,6 +1,6 @@
 package com.aitestforge.service.spec;
 
-import com.aitestforge.domain.spec.SpecStatus;
+import com.aitestforge.domain.spec.enums.SpecStatus;
 import com.aitestforge.domain.spec.SubdomainSpec;
 import com.aitestforge.repository.SubdomainSpecRepository;
 import lombok.RequiredArgsConstructor;

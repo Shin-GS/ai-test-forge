@@ -1,5 +1,6 @@
 package com.aitestforge.domain.spec;
 
+import com.aitestforge.domain.spec.enums.SpecStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

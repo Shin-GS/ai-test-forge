@@ -2,9 +2,9 @@ package com.aitestforge.service.agent;
 
 import com.aitestforge.domain.chat.ChatMessage;
 import com.aitestforge.domain.chat.ChatSession;
-import com.aitestforge.domain.chat.MessageRole;
-import com.aitestforge.dto.chat.ToolResultRequest;
-import com.aitestforge.dto.settings.SettingsResponse;
+import com.aitestforge.domain.chat.enums.MessageRole;
+import com.aitestforge.dto.chat.request.ToolResultRequest;
+import com.aitestforge.dto.settings.response.SettingsResponse;
 import com.aitestforge.infra.ai.AiService;
 import com.aitestforge.infra.ai.dto.AiChatResponse;
 import com.aitestforge.infra.ai.dto.ToolCall;

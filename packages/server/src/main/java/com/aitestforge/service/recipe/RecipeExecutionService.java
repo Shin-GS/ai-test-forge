@@ -3,7 +3,7 @@ package com.aitestforge.service.recipe;
 import com.aitestforge.common.exception.BusinessException;
 import com.aitestforge.common.exception.ErrorCode;
 import com.aitestforge.domain.recipe.Recipe;
-import com.aitestforge.dto.recipe.ExecuteRecipeRequest;
+import com.aitestforge.dto.recipe.request.ExecuteRecipeRequest;
 import com.aitestforge.repository.RecipeRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

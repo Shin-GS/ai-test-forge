@@ -41,19 +41,36 @@ ai-test-forge/
 │   │       │   │   │   └── dto/                    # AI 관련 DTO (AiChatResponse, ChatMessage, ToolCall, ToolControl, ToolDefinition)
 │   │       │   │   └── auth/            # JWT 인증 필터 + 토큰 프로바이더 + Rate Limiter
 │   │       │   ├── domain/             # JPA 엔티티
-│   │       │   │   ├── chat/           # ChatSession, ChatMessage, SessionStatus, MessageRole
-│   │       │   │   ├── spec/           # SubdomainSpec, SpecStatus
-│   │       │   │   ├── auth/           # User, UserRole
+│   │       │   │   ├── common/         # 공통 인터페이스 (EnumColumn)
+│   │       │   │   ├── chat/           # ChatSession, ChatMessage
+│   │       │   │   │   └── enums/      # SessionStatus, MessageRole
+│   │       │   │   ├── spec/           # SubdomainSpec
+│   │       │   │   │   └── enums/      # SpecStatus
+│   │       │   │   ├── auth/           # User
+│   │       │   │   │   └── enums/      # UserRole
 │   │       │   │   ├── recipe/         # Recipe
+│   │       │   │   │   └── enums/      # RecipeVisibility, RecipeValidationStatus
 │   │       │   │   └── workspace/      # Workspace, WorkspaceMapping
 │   │       │   ├── repository/         # JPA Repository
 │   │       │   ├── dto/                # 요청/응답 DTO (Java record)
 │   │       │   │   ├── auth/           # 인증 DTO
+│   │       │   │   │   ├── request/    # LoginRequest, RegisterRequest 등
+│   │       │   │   │   └── response/   # LoginResponse, UserResponse 등
 │   │       │   │   ├── chat/           # 채팅 DTO
+│   │       │   │   │   ├── request/    # SendMessageRequest 등
+│   │       │   │   │   └── response/   # SessionResponse, MessageResponse 등
 │   │       │   │   ├── recipe/         # 레시피 DTO
+│   │       │   │   │   ├── request/    # CreateRecipeRequest 등
+│   │       │   │   │   └── response/   # RecipeResponse 등
 │   │       │   │   ├── settings/       # 설정 DTO
+│   │       │   │   │   ├── request/    # UpdateSettingsRequest
+│   │       │   │   │   └── response/   # SettingsResponse
 │   │       │   │   ├── spec/           # 스펙 DTO
+│   │       │   │   │   ├── request/    # SpecRegisterRequest
+│   │       │   │   │   └── response/   # SpecResponse, SpecDetailResponse 등
 │   │       │   │   └── workspace/      # 워크스페이스 DTO
+│   │       │   │       ├── request/    # CreateWorkspaceRequest 등
+│   │       │   │       └── response/   # WorkspaceResponse 등
 │   │       │   └── common/             # 공통 유틸, 예외 처리
 │   │       │       ├── exception/      # BusinessException, ErrorCode, GlobalExceptionHandler
 │   │       │       └── util/           # 공통 유틸리티

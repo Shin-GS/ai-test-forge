@@ -1,6 +1,6 @@
 package com.aitestforge.repository;
 
-import com.aitestforge.domain.spec.SpecStatus;
+import com.aitestforge.domain.spec.enums.SpecStatus;
 import com.aitestforge.domain.spec.SubdomainSpec;
 import org.springframework.data.jpa.repository.JpaRepository;
 

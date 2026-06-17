@@ -1,8 +1,8 @@
 package com.aitestforge.service.recipe;
 
 import com.aitestforge.domain.recipe.Recipe;
-import com.aitestforge.domain.recipe.RecipeVisibility;
-import com.aitestforge.dto.recipe.RecipeResponse;
+import com.aitestforge.domain.recipe.enums.RecipeVisibility;
+import com.aitestforge.dto.recipe.response.RecipeResponse;
 import com.aitestforge.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

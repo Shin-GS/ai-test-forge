@@ -1,7 +1,14 @@
 package com.aitestforge.controller.auth;
 
 import com.aitestforge.domain.auth.User;
-import com.aitestforge.dto.auth.*;
+import com.aitestforge.dto.auth.request.ChangePasswordRequest;
+import com.aitestforge.dto.auth.request.LoginRequest;
+import com.aitestforge.dto.auth.request.OtpLoginRequest;
+import com.aitestforge.dto.auth.request.OtpVerifyRequest;
+import com.aitestforge.dto.auth.request.RegisterRequest;
+import com.aitestforge.dto.auth.response.LoginResponse;
+import com.aitestforge.dto.auth.response.OtpSetupResponse;
+import com.aitestforge.dto.auth.response.UserResponse;
 import com.aitestforge.service.auth.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

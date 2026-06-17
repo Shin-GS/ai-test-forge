@@ -1,7 +1,7 @@
 package com.aitestforge.service.settings;
 
-import com.aitestforge.dto.settings.SettingsResponse;
-import com.aitestforge.dto.settings.UpdateSettingsRequest;
+import com.aitestforge.dto.settings.response.SettingsResponse;
+import com.aitestforge.dto.settings.request.UpdateSettingsRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

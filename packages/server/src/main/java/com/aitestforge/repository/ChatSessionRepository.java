@@ -1,7 +1,7 @@
 package com.aitestforge.repository;
 
 import com.aitestforge.domain.chat.ChatSession;
-import com.aitestforge.domain.chat.SessionStatus;
+import com.aitestforge.domain.chat.enums.SessionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
