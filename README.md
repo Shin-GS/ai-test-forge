@@ -183,6 +183,10 @@ curl -X POST http://test-forge.company.com/api/v1/specs/register \
 
 **전제**: 서브도메인 서버가 OpenAPI JSON을 생성할 수 있어야 함 (대부분의 프레임워크에서 라이브러리로 지원).
 
+### CORS 설정
+
+서브도메인 서버에서 AI Test Forge 도메인의 요청을 허용해야 합니다. 자세한 설정 방법은 [CORS 설정 가이드](docs/CORS_GUIDE.md)를 참고하세요.
+
 ---
 
 ## 📋 레시피 (반복 패턴 저장)
