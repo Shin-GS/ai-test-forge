@@ -57,7 +57,7 @@ ai:
     model: ${OPENROUTER_MODEL:openai/gpt-4o}
 
 jwt:
-  secret: ${JWT_SECRET:dGVzdC1zZWNyZXQta2V5LWZvci1sb2NhbC1kZXZlbG9wbWVudC1vbmx5LTMyYnl0ZXM=}
+  secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
 # Actuator + Prometheus

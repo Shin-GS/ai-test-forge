@@ -137,7 +137,7 @@ java -jar packages/server/build/libs/server-0.0.1-SNAPSHOT.jar
 # 5. 초기 계정 생성 (서버 실행 후)
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@test.com","password":"admin1234","name":"관리자"}'
+  -d '{"email":"admin@test.com","password":"your-password","name":"관리자"}'
 ```
 
 - **개발 모드**: `http://localhost:5173` 접속 (Vite HMR, API는 프록시로 8080 연결)
@@ -151,7 +151,7 @@ docker compose up -d --build
 # http://localhost:8080 접속 후 계정 생성:
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@test.com","password":"admin1234","name":"관리자"}'
+  -d '{"email":"admin@test.com","password":"your-password","name":"관리자"}'
 ```
 
 ---

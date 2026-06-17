@@ -3,8 +3,8 @@ services:
     image: mysql:8.0
     container_name: ai-test-forge-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: ai_test_forge
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-ai_test_forge}
       MYSQL_CHARACTER_SET_SERVER: utf8mb4
       MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
     ports:
@@ -26,16 +26,16 @@ services:
       mysql:
         condition: service_healthy
     environment:
-      APP_PROFILE: local
+      APP_PROFILE: ${APP_PROFILE:-local}
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: ai_test_forge
-      DB_USERNAME: root
-      DB_PASSWORD: root
+      DB_NAME: ${DB_NAME:-ai_test_forge}
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
       SERVER_PORT: 8080
-      JWT_SECRET: ZG9ja2VyLWNvbXBvc2UtZGV2LXNlY3JldC1rZXktMzI=
-      JWT_EXPIRATION_MS: 86400000
-      CORS_ALLOWED_ORIGINS: http://localhost:8080
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080}
     ports:
       - "8080:8080"
 
