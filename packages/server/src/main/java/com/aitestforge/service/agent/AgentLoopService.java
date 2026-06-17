@@ -16,6 +16,7 @@ import com.aitestforge.service.chat.ChatService;
 import com.aitestforge.service.spec.SpecToolConverter;
 import com.aitestforge.service.spec.SpecControlFilter;
 import com.aitestforge.service.workspace.WorkspaceService;
+import com.aitestforge.service.settings.SettingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,6 +55,7 @@ public class AgentLoopService {
     private final SpecControlFilter specControlFilter;
     private final WorkspaceService workspaceService;
     private final TwoStageFilterService twoStageFilterService;
+    private final SettingsService settingsService;
 
     @Value("${agent-loop.max-iterations:20}")
     private int maxIterations;
@@ -197,6 +199,8 @@ public class AgentLoopService {
 
                 if (state != null && state.hasExecutedToolCall()) {
                     // tool call을 수행한 적 있으면 → 작업 완료 보고
+                    // 다음 액션 힌트 생성 (설정 활성화 시)
+                    generateNextActionHint(sessionId, response.message());
                     sendSseEvent(sessionId, "done", Map.of());
                     chatService.completeSession(sessionId);
                     completeEmitter(sessionId);
@@ -376,6 +380,35 @@ public class AgentLoopService {
         }
         if (loopStates.remove(sessionId) != null) {
             activeLoopCount.decrementAndGet();
+        }
+    }
+
+    /**
+     * 다음 액션 힌트 생성.
+     * nextActionHintEnabled 설정이 true이면 AI에게 추천 액션을 요청하고 SSE로 전달.
+     */
+    private void generateNextActionHint(Long sessionId, String completionMessage) {
+        if (!settingsService.getSettings().nextActionHintEnabled()) {
+            return;
+        }
+
+        try {
+            String prompt = "사용자가 방금 완료한 작업 결과입니다: " + completionMessage +
+                    "\n\n이 결과를 기반으로 사용자가 다음으로 할 수 있는 작업 2~3개를 짧게 제안해주세요. " +
+                    "각 제안은 한 줄로, 실행 가능한 문장 형태로 작성하세요.";
+
+            List<com.aitestforge.infra.ai.dto.ChatMessage> hintMessages = List.of(
+                    new com.aitestforge.infra.ai.dto.ChatMessage("user", prompt)
+            );
+
+            AiChatResponse hintResponse = aiService.chat(hintMessages, List.of());
+
+            if (hintResponse.message() != null && !hintResponse.message().isBlank()) {
+                sendSseEvent(sessionId, "next_action_hint", Map.of("content", hintResponse.message()));
+            }
+        } catch (Exception e) {
+            log.warn("Failed to generate next action hint for session {}: {}", sessionId, e.getMessage());
+            // 힌트 생성 실패는 무시 — 핵심 플로우에 영향 없음
         }
     }
 
