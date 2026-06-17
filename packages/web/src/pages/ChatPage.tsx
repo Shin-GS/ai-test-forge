@@ -23,6 +23,9 @@ function ChatPage() {
   const setActiveSession = useChatStore((s) => s.setActiveSession)
   const startNewChat = useChatStore((s) => s.startNewChat)
   const sendUserMessage = useChatStore((s) => s.sendUserMessage)
+  const nextActionHints = useChatStore((s) => s.nextActionHints)
+  const isRepeatedFailure = useChatStore((s) => s.isRepeatedFailure)
+  const isAgentDone = useChatStore((s) => s.isAgentDone)
 
   // Agent Runner 상태 (인증 필요 감지)
   const pauseReason = useAgentRunnerStore((s) => s.pauseReason)
@@ -38,6 +41,9 @@ function ChatPage() {
   const [suggestedRecipes, setSuggestedRecipes] = useState<RecipeResponse[]>([])
   const [pendingMessage, setPendingMessage] = useState<string | null>(null)
 
+  // "더 할 수 있는 것 보기" 로딩 상태
+  const [isHintLoading, setIsHintLoading] = useState(false)
+
   // 초기 세션 목록 로드
   useEffect(() => {
     fetchSessions()
@@ -47,6 +53,19 @@ function ChatPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, toolCalls])
+
+  const proceedWithMessage = useCallback(
+    (message: string) => {
+      setSuggestedRecipes([])
+      setPendingMessage(null)
+      if (activeSessionId) {
+        sendUserMessage(message)
+      } else {
+        startNewChat(message)
+      }
+    },
+    [activeSessionId, sendUserMessage, startNewChat]
+  )
 
   const handleSend = useCallback(
     async (message: string) => {
@@ -66,20 +85,7 @@ function ChatPage() {
       // 제안 없거나 기존 세션이면 바로 전송
       proceedWithMessage(message)
     },
-    [activeSessionId]
-  )
-
-  const proceedWithMessage = useCallback(
-    (message: string) => {
-      setSuggestedRecipes([])
-      setPendingMessage(null)
-      if (activeSessionId) {
-        sendUserMessage(message)
-      } else {
-        startNewChat(message)
-      }
-    },
-    [activeSessionId, sendUserMessage, startNewChat]
+    [activeSessionId, proceedWithMessage]
   )
 
   const handleUseRecipe = useCallback(
@@ -103,6 +109,9 @@ function ChatPage() {
       messages: [],
       toolCalls: [],
       isLoading: false,
+      nextActionHints: [],
+      isRepeatedFailure: false,
+      isAgentDone: false,
     })
   }, [])
 
@@ -119,6 +128,38 @@ function ChatPage() {
     },
     [startNewChat]
   )
+
+  // "💡 더 할 수 있는 것 보기" 버튼 클릭
+  const handleNextActionHint = useCallback(async () => {
+    if (!activeSessionId) return
+    setIsHintLoading(true)
+    try {
+      sendUserMessage('다음으로 할 수 있는 것을 제안해줘')
+    } finally {
+      setIsHintLoading(false)
+    }
+  }, [activeSessionId, sendUserMessage])
+
+  // 다음 액션 힌트 버튼 클릭 (SSE로 받은 힌트)
+  const handleHintClick = useCallback(
+    (hint: string) => {
+      sendUserMessage(hint)
+    },
+    [sendUserMessage]
+  )
+
+  // 반복 실패 재시도: 마지막 사용자 메시지 다시 전송
+  const handleRetry = useCallback(() => {
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((msg) => msg.role === 'USER')
+
+    if (lastUserMessage) {
+      // 반복 실패 상태 초기화
+      useChatStore.setState({ isRepeatedFailure: false })
+      sendUserMessage(lastUserMessage.content)
+    }
+  }, [messages, sendUserMessage])
 
   // 활성 세션 없음 = 온보딩 표시
   const showOnboarding = !activeSessionId && messages.length === 0
@@ -169,6 +210,57 @@ function ChatPage() {
                   onConfirm={() => confirmToolCall(pauseData.toolCall!)}
                   onReject={() => rejectToolCall(pauseData.toolCall!)}
                 />
+              )}
+
+              {/* 반복 실패 재시도 카드 */}
+              {isRepeatedFailure && (
+                <div className="mx-auto my-4 max-w-[600px] rounded-lg border border-[var(--color-error)] bg-[var(--color-error-subtle)] p-4">
+                  <div className="mb-3 text-sm font-medium text-[var(--color-text-primary)]">
+                    ❌ 반복 실패로 중단합니다. 다시 시도하시겠어요?
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleRetry}
+                  >
+                    🔄 재시도
+                  </Button>
+                </div>
+              )}
+
+              {/* Agent Loop 완료 후: "💡 더 할 수 있는 것 보기" 버튼 */}
+              {isAgentDone && !isLoading && !isRepeatedFailure && (
+                <div className="mx-auto my-4 max-w-[600px]">
+                  {/* SSE로 받은 다음 액션 힌트 */}
+                  {nextActionHints.length > 0 ? (
+                    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+                      <div className="mb-3 text-sm font-medium text-[var(--color-text-primary)]">
+                        💡 다음으로 할 수 있는 것
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {nextActionHints.map((hint) => (
+                          <Button
+                            key={hint}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleHintClick(hint)}
+                          >
+                            {hint}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleNextActionHint}
+                      disabled={isHintLoading}
+                    >
+                      {isHintLoading ? '⏳ 로딩 중...' : '💡 더 할 수 있는 것 보기'}
+                    </Button>
+                  )}
+                </div>
               )}
 
               {/* 레시피 제안 */}

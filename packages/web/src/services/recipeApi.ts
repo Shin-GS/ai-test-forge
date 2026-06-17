@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/stores/useAuthStore'
-import type { RecipeResponse, UpdateRecipeRequest } from '@/types/recipe'
+import type { RecipeResponse, RecipeValidationResult, UpdateRecipeRequest } from '@/types/recipe'
 import type { SseEvent } from '@/types/chat'
 
 const API_BASE = '/api/v1'
@@ -195,5 +195,39 @@ export async function suggestRecipes(
   })
 
   if (!res.ok) return []
+  return res.json()
+}
+
+/**
+ * 레시피를 복제한다.
+ * POST /api/v1/recipes/{id}/clone
+ */
+export async function cloneRecipe(id: number): Promise<RecipeResponse> {
+  const res = await fetch(`${API_BASE}/recipes/${id}/clone`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  })
+
+  if (!res.ok) {
+    throw new Error('레시피 복제에 실패했습니다.')
+  }
+
+  return res.json()
+}
+
+/**
+ * 레시피의 스펙 호환성을 검증한다.
+ * POST /api/v1/recipes/{id}/validate
+ */
+export async function validateRecipe(id: number): Promise<RecipeValidationResult> {
+  const res = await fetch(`${API_BASE}/recipes/${id}/validate`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  })
+
+  if (!res.ok) {
+    throw new Error('레시피 스펙 검증에 실패했습니다.')
+  }
+
   return res.json()
 }

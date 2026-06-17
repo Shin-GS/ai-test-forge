@@ -38,92 +38,17 @@ export function useSseConnection(
 
   const store = useAgentRunnerStore
 
-  const connect = useCallback(() => {
-    if (!sessionId) return
-
-    // 기존 연결 정리
+  const disconnect = useCallback(() => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current)
+      retryTimerRef.current = null
+    }
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
       eventSourceRef.current = null
     }
-
-    const token = useAuthStore.getState().token
-    const params = new URLSearchParams()
-    if (token) params.set('token', token)
-    if (lastEventId) params.set('lastEventId', lastEventId)
-
-    const queryString = params.toString()
-    const url = `${API_BASE}/chat/${sessionId}/stream${queryString ? `?${queryString}` : ''}`
-
-    const es = new EventSource(url)
-    eventSourceRef.current = es
-
-    es.onopen = () => {
-      setIsConnected(true)
-      retryCountRef.current = 0
-      // 세션 ID를 localStorage에 저장
-      localStorage.setItem(ACTIVE_SESSION_KEY, sessionId)
-      store.getState().setStatus('running')
-    }
-
-    es.onmessage = (event) => {
-      // Last-Event-ID 추적
-      if (event.lastEventId) {
-        setLastEventId(event.lastEventId)
-      }
-
-      // unnamed event (fallback) — BE가 name 없이 보낸 경우
-      try {
-        const parsed = JSON.parse(event.data) as AgentRunnerSseEvent
-        handleSseEvent(parsed)
-      } catch {
-        // 파싱 실패 무시
-      }
-    }
-
-    // named event listeners — Spring SSE의 event.name()으로 전송된 이벤트 처리
-    const sseEventTypes = ['tool_call_start', 'tool_call_result', 'step_progress', 'done', 'error', 'message', 'recipe_suggestion'] as const
-    for (const eventType of sseEventTypes) {
-      es.addEventListener(eventType, (event: MessageEvent) => {
-        if (event.lastEventId) {
-          setLastEventId(event.lastEventId)
-        }
-        try {
-          const data = JSON.parse(event.data)
-          handleSseEvent({ type: eventType, data } as AgentRunnerSseEvent)
-        } catch {
-          // 파싱 실패 무시
-        }
-      })
-    }
-
-    es.onerror = () => {
-      setIsConnected(false)
-      es.close()
-      eventSourceRef.current = null
-
-      retryCountRef.current += 1
-
-      if (retryCountRef.current >= MAX_RETRY_COUNT) {
-        // 3회 연속 실패 → error 상태
-        store.getState().setStatus('error')
-        store.getState().setError(
-          'SSE 연결 실패: 3회 재연결 시도가 모두 실패했습니다. 수동으로 다시 연결해주세요.'
-        )
-        return
-      }
-
-      // 지수 백오프로 재연결
-      const delay = Math.min(
-        INITIAL_DELAY_MS * Math.pow(BACKOFF_MULTIPLIER, retryCountRef.current - 1),
-        MAX_DELAY_MS
-      )
-
-      retryTimerRef.current = setTimeout(() => {
-        connect()
-      }, delay)
-    }
-  }, [sessionId, lastEventId])
+    setIsConnected(false)
+  }, [])
 
   const handleSseEvent = useCallback((event: AgentRunnerSseEvent) => {
     const state = store.getState()
@@ -173,24 +98,102 @@ export function useSseConnection(
         // 향후 UI에서 사용 — 현재는 무시
         break
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disconnect])
 
-  const disconnect = useCallback(() => {
-    if (retryTimerRef.current) {
-      clearTimeout(retryTimerRef.current)
-      retryTimerRef.current = null
-    }
+  const connect = useCallback(() => {
+    if (!sessionId) return
+
+    // 기존 연결 정리
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
       eventSourceRef.current = null
     }
-    setIsConnected(false)
-  }, [])
+
+    const token = useAuthStore.getState().token
+    const params = new URLSearchParams()
+    if (token) params.set('token', token)
+    if (lastEventId) params.set('lastEventId', lastEventId)
+
+    const queryString = params.toString()
+    const url = `${API_BASE}/chat/${sessionId}/stream${queryString ? `?${queryString}` : ''}`
+
+    const es = new EventSource(url)
+    eventSourceRef.current = es
+
+    es.onopen = () => {
+      setIsConnected(true)
+      retryCountRef.current = 0
+      // 세션 ID를 localStorage에 저장
+      localStorage.setItem(ACTIVE_SESSION_KEY, sessionId)
+      store.getState().setStatus('running')
+    }
+
+    es.onmessage = (event) => {
+      // Last-Event-ID 추적
+      if (event.lastEventId) {
+        setLastEventId(event.lastEventId)
+      }
+
+      // unnamed event (fallback) — BE가 name 없이 보낸 경우
+      try {
+        const parsed = JSON.parse(event.data) as AgentRunnerSseEvent
+        handleSseEvent(parsed)
+      } catch {
+        // 파싱 실패 무시
+      }
+    }
+
+    // named event listeners — Spring SSE의 event.name()으로 전송된 이벤트 처리
+    const sseEventTypes = ['tool_call_start', 'tool_call_result', 'step_progress', 'done', 'error', 'message', 'recipe_suggestion', 'next_action_hint'] as const
+    for (const eventType of sseEventTypes) {
+      es.addEventListener(eventType, (event: MessageEvent) => {
+        if (event.lastEventId) {
+          setLastEventId(event.lastEventId)
+        }
+        try {
+          const data = JSON.parse(event.data)
+          handleSseEvent({ type: eventType, data } as AgentRunnerSseEvent)
+        } catch {
+          // 파싱 실패 무시
+        }
+      })
+    }
+
+    es.onerror = () => {
+      setIsConnected(false)
+      es.close()
+      eventSourceRef.current = null
+
+      retryCountRef.current += 1
+
+      if (retryCountRef.current >= MAX_RETRY_COUNT) {
+        // 3회 연속 실패 → error 상태
+        store.getState().setStatus('error')
+        store.getState().setError(
+          'SSE 연결 실패: 3회 재연결 시도가 모두 실패했습니다. 수동으로 다시 연결해주세요.'
+        )
+        return
+      }
+
+      // 지수 백오프로 재연결
+      const delay = Math.min(
+        INITIAL_DELAY_MS * Math.pow(BACKOFF_MULTIPLIER, retryCountRef.current - 1),
+        MAX_DELAY_MS
+      )
+
+      retryTimerRef.current = setTimeout(() => {
+        connect()
+      }, delay)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, lastEventId, handleSseEvent, disconnect])
 
   const reconnect = useCallback(() => {
     retryCountRef.current = 0
     store.getState().setError(null)
     connect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connect])
 
   // sessionId 변경 시 연결/해제
@@ -204,6 +207,7 @@ export function useSseConnection(
     return () => {
       disconnect()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId])
 
   return {

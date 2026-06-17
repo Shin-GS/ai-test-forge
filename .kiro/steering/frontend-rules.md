@@ -113,3 +113,53 @@ export async function sendMessage(sessionId: string, message: string): Promise<C
 - [ ] 레이아웃 구조(순서, 간격, 정렬)가 HTML과 일치하는가?
 - [ ] 빈 상태(empty state), 에러 상태, 로딩 상태를 모두 처리했는가?
 - [ ] cases.md의 인터랙션(버튼 → API 호출)을 모두 구현했는가?
+
+## 9. Lint 규칙
+
+### ESLint 설정 (eslint.config.js)
+
+- **ESLint 9** flat config 방식 사용
+- **TypeScript-ESLint**: `@typescript-eslint/recommended` 적용
+- **react-hooks**: `exhaustive-deps`, `rules-of-hooks` 활성화
+- **react-refresh**: `only-export-components` 경고
+
+### 주요 규칙
+
+| 규칙 | 수준 | 설명 |
+|------|------|------|
+| `@typescript-eslint/no-unused-vars` | error | 미사용 변수 금지 (`_` 접두사 예외) |
+| `@typescript-eslint/no-explicit-any` | warn | `any` 사용 시 경고 |
+| `no-console` | warn | `console.warn`, `console.error`만 허용 |
+| `react-hooks/exhaustive-deps` | warn | deps 배열 누락 경고 |
+| `react-hooks/rules-of-hooks` | error | hooks 사용 규칙 위반 금지 |
+
+### 비활성화된 규칙 (React Compiler 전용)
+
+React Compiler를 사용하지 않으므로 다음 규칙은 비활성화:
+- `react-hooks/immutability`
+- `react-hooks/preserve-manual-memoization`
+- `react-hooks/set-state-in-effect`
+
+### Zustand store + exhaustive-deps 패턴
+
+Zustand의 `useStore` API에서 store 자체를 deps에 넣지 않는 것은 의도적 패턴.
+이 경우에만 `// eslint-disable-next-line react-hooks/exhaustive-deps` 사용 허용.
+
+```tsx
+// ✅ 허용: Zustand store 참조 (불변 레퍼런스)
+const store = useAgentRunnerStore
+useEffect(() => {
+  store.getState().doSomething()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [])
+```
+
+### 실행 방법
+
+```bash
+# lint 체크
+pnpm --filter ai-test-forge-web lint
+
+# 자동 수정
+pnpm --filter ai-test-forge-web lint:fix
+```

@@ -54,14 +54,14 @@ public class SpecToolConverter {
             }
 
             List<ToolDefinition> tools = new ArrayList<>();
-            Iterator<Map.Entry<String, JsonNode>> pathIter = paths.fields();
+            Iterator<Map.Entry<String, JsonNode>> pathIter = paths.properties().iterator();
 
             while (pathIter.hasNext()) {
                 Map.Entry<String, JsonNode> pathEntry = pathIter.next();
                 String path = pathEntry.getKey();
                 JsonNode methods = pathEntry.getValue();
 
-                Iterator<Map.Entry<String, JsonNode>> methodIter = methods.fields();
+                Iterator<Map.Entry<String, JsonNode>> methodIter = methods.properties().iterator();
                 while (methodIter.hasNext()) {
                     Map.Entry<String, JsonNode> methodEntry = methodIter.next();
                     String method = methodEntry.getKey().toUpperCase();

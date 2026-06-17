@@ -9,6 +9,16 @@ java {
     sourceCompatibility = JavaVersion.VERSION_25
 }
 
+tasks.withType<JavaCompile> {
+    options.compilerArgs.addAll(listOf(
+        "-Xlint:deprecation",
+        "-Xlint:unchecked",
+        "-Xlint:rawtypes",
+        "-Xlint:fallthrough",
+        "-Werror"  // 경고를 에러로 처리
+    ))
+}
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")

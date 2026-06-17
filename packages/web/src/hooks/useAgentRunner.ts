@@ -26,6 +26,7 @@ export function useAgentRunner() {
     if (savedSessionId && !store.sessionId) {
       store.setSessionId(savedSessionId)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /**
@@ -155,6 +156,7 @@ export function useAgentRunner() {
       // BE에 결과 일괄 전달
       await sendToolResults(store.sessionId, results)
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [store.sessionId]
   )
 
@@ -194,6 +196,7 @@ export function useAgentRunner() {
       // 3. readonly 또는 일반 → 즉시 실행
       await executeToolCalls([toolCall])
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [store.sessionId, executeToolCalls]
   )
 
@@ -205,6 +208,7 @@ export function useAgentRunner() {
       store.resume()
       await executeToolCalls([toolCall])
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [executeToolCalls]
   )
 
@@ -226,16 +230,18 @@ export function useAgentRunner() {
       store.addCompletedResult(rejectedResult)
       await sendToolResults(store.sessionId, [rejectedResult])
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [store.sessionId]
   )
 
   // 언마운트 시 모든 진행 중인 요청 취소
   useEffect(() => {
+    const controllers = abortControllersRef.current
     return () => {
-      for (const controller of abortControllersRef.current.values()) {
+      for (const controller of controllers.values()) {
         controller.abort()
       }
-      abortControllersRef.current.clear()
+      controllers.clear()
     }
   }, [])
 

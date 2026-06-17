@@ -95,7 +95,7 @@ public class RecipeExecutionService {
         JsonNode extractNode = currentStep.get("extract");
         if (extractNode != null && extractNode.isObject()) {
             Map<String, String> extracts = new LinkedHashMap<>();
-            extractNode.fields().forEachRemaining(field ->
+            extractNode.properties().forEach(field ->
                     extracts.put(field.getKey(), field.getValue().asText())
             );
             Map<String, String> extracted = recipeVariableResolver.extractVariables(resultBody, extracts);
@@ -279,7 +279,7 @@ public class RecipeExecutionService {
         }
         if (bodyNode == null || !bodyNode.isObject()) return fixedFields;
 
-        Iterator<Map.Entry<String, JsonNode>> fields = bodyNode.fields();
+        Iterator<Map.Entry<String, JsonNode>> fields = bodyNode.properties().iterator();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> entry = fields.next();
             String value = entry.getValue().asText("");

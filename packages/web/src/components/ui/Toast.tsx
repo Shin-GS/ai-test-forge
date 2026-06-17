@@ -12,6 +12,7 @@ let toastId = 0
 let addToastFn: ((type: ToastType, message: string) => void) | null = null
 
 /** 전역 toast 호출 함수 */
+// eslint-disable-next-line react-refresh/only-export-components
 export function toast(type: ToastType, message: string) {
   addToastFn?.(type, message)
 }

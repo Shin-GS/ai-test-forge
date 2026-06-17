@@ -197,3 +197,50 @@ domain/{도메인}/
 - Entity에서 DTO 직접 참조 — 레이어 의존성 역전
 - Service에서 HttpServletRequest/Response 직접 사용 — 테스트 어려움
 - 비즈니스 로직을 Controller에 작성 — 재사용/테스트 불가
+
+## 12. Lint / 컴파일러 경고 규칙
+
+### Gradle 컴파일러 옵션 (build.gradle.kts)
+
+`-Werror`이 활성화되어 있어 **모든 경고가 컴파일 에러로 처리**된다.
+
+```kotlin
+tasks.withType<JavaCompile> {
+    options.compilerArgs.addAll(listOf(
+        "-Xlint:deprecation",   // deprecated API 사용 경고
+        "-Xlint:unchecked",     // unchecked 형 변환 경고
+        "-Xlint:rawtypes",      // raw type 사용 경고
+        "-Xlint:fallthrough",   // switch fallthrough 경고
+        "-Werror"               // 경고를 에러로 처리
+    ))
+}
+```
+
+### 주의사항
+
+| 항목 | 대응 |
+|------|------|
+| deprecated API 사용 | 대체 메서드로 교체 (예: `JsonNode.fields()` → `properties().iterator()`) |
+| unchecked cast | 제네릭 타입을 명시하거나 `@SuppressWarnings("unchecked")` 사유 주석과 함께 사용 |
+| raw type | 반드시 제네릭 파라미터 명시 |
+| switch fallthrough | `break` 또는 `yield` 명시, 의도적이면 `// fall through` 주석 |
+
+### 실행 방법
+
+```bash
+# 서버 컴파일 (FE 빌드 스킵)
+./gradlew :packages:server:compileJava -x buildFrontend -x copyWeb
+
+# 클라이언트 라이브러리 컴파일
+./gradlew :packages:client-spring:compileJava
+```
+
+### Jackson 3 / 2 호환 주의
+
+Spring Boot 4.0.x에서 Jackson 3.x (`tools.jackson.core`)와 Jackson 2.x (`com.fasterxml.jackson`)가 공존.
+현재 코드는 `com.fasterxml.jackson` 패키지를 사용하며, deprecated 메서드를 사용하면 `-Werror`로 빌드 실패한다.
+
+| deprecated | 대체 |
+|-----------|------|
+| `JsonNode.fields()` | `properties().iterator()` |
+| `JsonNode.fieldNames()` | `propertyNames()` |

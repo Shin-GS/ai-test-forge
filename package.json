@@ -5,6 +5,9 @@
   "scripts": {
     "dev:web": "pnpm --filter ai-test-forge-web dev",
     "build:web": "pnpm --filter ai-test-forge-web build",
-    "build": "pnpm build:web"
+    "build": "pnpm build:web",
+    "lint:web": "pnpm --filter ai-test-forge-web lint",
+    "lint:server": "gradlew :packages:server:compileJava -x buildFrontend -x copyWeb",
+    "lint": "pnpm lint:web"
   }
 }

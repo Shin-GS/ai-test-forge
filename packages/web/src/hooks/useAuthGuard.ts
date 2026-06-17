@@ -52,18 +52,6 @@ export function useAuthGuard() {
   }
 
   /**
-   * 401 응답 감지 시 호출.
-   * Agent Loop를 일시정지하고 10초 간격으로 폴링 시작.
-   */
-  const handleAuthError = useCallback(
-    (subdomainName: string, loginUrl: string) => {
-      storeApi.getState().pause('auth', { subdomainName, loginUrl })
-      startPolling(subdomainName, loginUrl)
-    },
-    []
-  )
-
-  /**
    * 10초 간격으로 인증 상태를 폴링.
    * 로그인 완료 감지 시 Agent Loop 재개.
    * 5분 타임아웃 초과 시 에러 상태.
@@ -97,6 +85,18 @@ export function useAuthGuard() {
       }, POLLING_TIMEOUT_MS)
     },
     [cleanupPolling]
+  )
+
+  /**
+   * 401 응답 감지 시 호출.
+   * Agent Loop를 일시정지하고 10초 간격으로 폴링 시작.
+   */
+  const handleAuthError = useCallback(
+    (subdomainName: string, loginUrl: string) => {
+      storeApi.getState().pause('auth', { subdomainName, loginUrl })
+      startPolling(subdomainName, loginUrl)
+    },
+    [startPolling]
   )
 
   /**

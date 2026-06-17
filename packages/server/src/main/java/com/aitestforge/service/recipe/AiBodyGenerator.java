@@ -85,7 +85,7 @@ public class AiBodyGenerator {
 
             // null이거나 "{{auto}}" 값인 필드 추출
             Map<String, String> fieldsToFill = new LinkedHashMap<>();
-            Iterator<Map.Entry<String, JsonNode>> fields = bodyNode.fields();
+            Iterator<Map.Entry<String, JsonNode>> fields = bodyNode.properties().iterator();
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> entry = fields.next();
                 if (entry.getValue().isNull()
@@ -101,7 +101,7 @@ public class AiBodyGenerator {
 
             // 채워진 필드 정보 (컨텍스트로 제공)
             Map<String, String> filledFields = new LinkedHashMap<>();
-            fields = bodyNode.fields();
+            fields = bodyNode.properties().iterator();
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> entry = fields.next();
                 if (!fieldsToFill.containsKey(entry.getKey()) && !entry.getValue().isNull()) {
@@ -390,7 +390,7 @@ public class AiBodyGenerator {
             if (!aiNode.isObject()) return originalBody;
 
             // AI가 채운 값으로 null/{{auto}} 필드를 업데이트
-            Iterator<Map.Entry<String, JsonNode>> aiFields = aiNode.fields();
+            Iterator<Map.Entry<String, JsonNode>> aiFields = aiNode.properties().iterator();
             while (aiFields.hasNext()) {
                 Map.Entry<String, JsonNode> entry = aiFields.next();
                 JsonNode originalValue = original.get(entry.getKey());
