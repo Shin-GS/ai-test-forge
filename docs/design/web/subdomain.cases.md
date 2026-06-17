@@ -45,7 +45,20 @@
 - 인터랙션:
   - [연동 가이드 보기] → 별도 가이드 페이지 또는 모달
 
-## Case 4: STALE 서버 있음
+## Case 4: 수동 등록 (파일 업로드)
+- 조건: 클라이언트 라이브러리 없이 OpenAPI JSON을 직접 등록
+- 표시:
+  - 목록/빈 화면에서 [📄 수동 등록] 버튼 클릭 시 폼 표시
+  - 입력 필드: 서브도메인 이름, 환경, Base URL
+  - JSON 파일 선택 (input type="file", accept=".json")
+  - [등록] [취소] 버튼
+- 인터랙션:
+  - 필수값 미입력 시 등록 버튼 비활성
+  - 유효하지 않은 JSON → 에러 메시지 표시
+  - 등록 성공 → 폼 닫힘 + 목록 갱신
+  - 등록 실패 → 에러 메시지 표시
+
+## Case 5: STALE 서버 있음
 - 조건: 일부 서버가 STALE 상태 (heartbeat 미응답)
 - 표시:
   - 목록 상단에 경고 배너: "⚠️ N개 서버의 연결이 불안정합니다"
@@ -61,3 +74,4 @@
 |------|-----|------|
 | 서브도메인 목록 | GET /api/v1/specs | 등록된 전체 서브도메인 + 환경별 상태 |
 | 서브도메인 상세 | GET /api/v1/specs/{name}/detail?environment={env} | 특정 서브도메인의 API 목록 (파싱된 엔드포인트) |
+| 수동 등록 | POST /api/v1/specs/register | OpenAPI JSON 직접 등록 (name, environment, baseUrl, specJson) |

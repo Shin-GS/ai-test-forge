@@ -198,13 +198,24 @@ function extractInputVariables(steps: RecipeStep[]): string[] {
   const pattern = /\{\{input:([^}]+)\}\}/g
 
   for (const step of steps) {
+    // 신규 body 필드에서 추출
+    if (step.body) {
+      for (const value of Object.values(step.body)) {
+        if (typeof value !== 'string') continue
+        let match: RegExpExecArray | null
+        while ((match = pattern.exec(value)) !== null) {
+          labels.add(match[1])
+        }
+        pattern.lastIndex = 0
+      }
+    }
+    // 구버전 params fallback
     if (step.params) {
       for (const value of Object.values(step.params)) {
         let match: RegExpExecArray | null
         while ((match = pattern.exec(value)) !== null) {
           labels.add(match[1])
         }
-        // RegExp.exec은 lastIndex를 사용하므로 리셋
         pattern.lastIndex = 0
       }
     }

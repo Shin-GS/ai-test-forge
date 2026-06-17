@@ -57,3 +57,8 @@
 | 레시피 상세 | GET /api/v1/recipes/{id} | 단계별 상세 |
 | 레시피 삭제 | DELETE /api/v1/recipes/{id} | 삭제 |
 | 레시피 수정 | PUT /api/v1/recipes/{id} | 단계/변수 수정 |
+| 레시피 복제 | POST /api/v1/recipes/{id}/clone | 다른 사용자의 레시피를 내 것으로 복제 |
+| 레시피 실행 | POST /api/v1/recipes/{id}/execute | SSE 스트림 반환 (step별 진행) |
+| 레시피 스펙 검증 | POST /api/v1/recipes/{id}/validate | 각 step이 현재 스펙과 호환되는지 검증 |
+| 대화 이력 기반 생성 | POST /api/v1/recipes/generate-from-session | tool_call 히스토리에서 레시피 자동 생성 |
+| 유사 레시피 제안 | GET /api/v1/recipes/suggest?query=&maxResults= | 사용자 요청과 유사한 레시피 검색 |

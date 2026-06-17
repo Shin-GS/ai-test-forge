@@ -142,8 +142,11 @@ public class SseEventBufferService {
      * @param sessionId 세션 ID
      */
     public void cleanup(Long sessionId) {
+        SseEmitter emitter = emitters.remove(sessionId);
+        if (emitter != null) {
+            emitter.complete();
+        }
         buffers.remove(sessionId);
-        emitters.remove(sessionId);
         eventIdSequences.remove(sessionId);
         log.debug("Cleaned up buffer, emitter, and sequence for session {}", sessionId);
     }

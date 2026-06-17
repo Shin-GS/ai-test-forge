@@ -32,6 +32,15 @@ interface ChatState {
   // 레시피 실행
   recipeAbortController: AbortController | null
 
+  // 다음 액션 힌트
+  nextActionHints: string[]
+
+  // 반복 실패 감지
+  isRepeatedFailure: boolean
+
+  // Agent Loop 완료 여부
+  isAgentDone: boolean
+
   // 액션
   fetchSessions: () => Promise<void>
   setActiveSession: (sessionId: number) => Promise<void>
@@ -51,6 +60,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   toolCalls: [],
   eventSource: null,
   recipeAbortController: null,
+  nextActionHints: [],
+  isRepeatedFailure: false,
+  isAgentDone: false,
 
   fetchSessions: async () => {
     try {
@@ -72,7 +84,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   startNewChat: async (message: string) => {
-    set({ isLoading: true, toolCalls: [] })
+    set({ isLoading: true, toolCalls: [], nextActionHints: [], isRepeatedFailure: false, isAgentDone: false })
     try {
       const session = await createSession()
       const sessions = get().sessions
@@ -124,7 +136,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { activeSessionId } = get()
     if (!activeSessionId) return
 
-    set({ isLoading: true, toolCalls: [] })
+    set({ isLoading: true, toolCalls: [], nextActionHints: [], isRepeatedFailure: false, isAgentDone: false })
     try {
       // 사용자 메시지를 로컬에 추가
       const userMsg: MessageResponse = {
@@ -242,6 +254,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           method: event.method,
           path: event.path,
           status: 'active',
+          arguments: event.body ? JSON.stringify(event.body, null, 2) : undefined,
         }
         set((state) => ({
           toolCalls: [...state.toolCalls, newToolCall],
@@ -253,7 +266,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         set((state) => ({
           toolCalls: state.toolCalls.map((tc) =>
             tc.id === event.id
-              ? { ...tc, status: 'done' as const, result: event.result }
+              ? { ...tc, status: 'done' as const, result: event.result, responseBody: event.result }
               : tc
           ),
         }))
@@ -262,7 +275,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       case 'done': {
         get().disconnectStream()
-        set({ isLoading: false })
+        set({ isLoading: false, isAgentDone: true })
         break
       }
 
@@ -272,11 +285,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
           tc.status === 'active' ? { ...tc, status: 'error' as const } : tc
         )
 
+        // 반복 실패 감지
+        const isRepeated = event.message.includes('반복 실패')
+
         // 에러 메시지를 AI 역할로 추가
         const errorMessage: MessageResponse = {
           id: Date.now(),
           role: 'ASSISTANT',
-          content: `❌ ${event.message}`,
+          content: isRepeated
+            ? '❌ 반복 실패로 중단합니다. 다시 시도하시겠어요?'
+            : `❌ ${event.message}`,
           toolCallId: null,
           createdAt: new Date().toISOString(),
         }
@@ -286,7 +304,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
           messages: [...state.messages, errorMessage],
           toolCalls: updatedToolCalls,
           isLoading: false,
+          isRepeatedFailure: isRepeated,
         }))
+        break
+      }
+
+      case 'next_action_hint': {
+        // BE는 content로 줄바꿈 구분된 문자열을 보냄 → 라인 단위로 분리하여 배열 변환
+        const rawContent = event.content ?? ''
+        const hints = rawContent
+          .split('\n')
+          .map((line: string) => line.replace(/^[-•*\d.)\s]+/, '').trim())
+          .filter((line: string) => line.length > 0)
+        set({ nextActionHints: hints })
         break
       }
     }
@@ -313,6 +343,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isLoading: false,
       toolCalls: [],
       recipeAbortController: null,
+      nextActionHints: [],
+      isRepeatedFailure: false,
+      isAgentDone: false,
     })
   },
 }))

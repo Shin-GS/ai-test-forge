@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { getRecipes, deleteRecipe, updateRecipe } from '@/services/recipeApi'
+import { getRecipes, deleteRecipe, updateRecipe, cloneRecipe, validateRecipe } from '@/services/recipeApi'
 import { useChatStore } from '@/stores/useChatStore'
 import RecipeCard from '@/components/recipe/RecipeCard'
 import { Button } from '@/components/ui'
 import { MESSAGES } from '@/constants'
-import type { RecipeResponse, RecipeStep, UpdateRecipeRequest } from '@/types/recipe'
+import type { RecipeResponse, RecipeStep, RecipeValidationResult, UpdateRecipeRequest } from '@/types/recipe'
 
 function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -250,11 +250,30 @@ function RecipeDetailPanel({
   const [editDescription, setEditDescription] = useState(recipe.description)
   const [editTags, setEditTags] = useState(recipe.tags.join(', '))
 
+  // 스펙 검증 결과 상태
+  const [validationResult, setValidationResult] = useState<RecipeValidationResult | null>(null)
+
   const updateMutation = useMutation({
     mutationFn: (data: UpdateRecipeRequest) => updateRecipe(recipe.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
       setIsEditing(false)
+    },
+  })
+
+  // 레시피 복제 mutation
+  const cloneMutation = useMutation({
+    mutationFn: () => cloneRecipe(recipe.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recipes'] })
+    },
+  })
+
+  // 스펙 검증 mutation
+  const validateMutation = useMutation({
+    mutationFn: () => validateRecipe(recipe.id),
+    onSuccess: (data) => {
+      setValidationResult(data)
     },
   })
 
@@ -371,10 +390,67 @@ function RecipeDetailPanel({
           생성일: {formatDate(recipe.createdAt)}
         </div>
 
+        {/* 스펙 검증 */}
+        {!isEditing && (
+          <div className="mb-4">
+            <Button
+              variant="secondary"
+              size="md"
+              disabled={validateMutation.isPending}
+              onClick={() => validateMutation.mutate()}
+            >
+              {validateMutation.isPending ? '검증 중...' : '🔍 스펙 검증'}
+            </Button>
+
+            {/* 검증 에러 */}
+            {validateMutation.isError && (
+              <div className="mt-2 rounded-lg bg-[var(--color-error-subtle)] px-3 py-2 text-sm text-[var(--color-error)]">
+                {validateMutation.error instanceof Error
+                  ? validateMutation.error.message
+                  : '스펙 검증에 실패했습니다.'}
+              </div>
+            )}
+
+            {/* 검증 결과 */}
+            {validationResult && (
+              <div className="mt-2">
+                {validationResult.status === 'VALID' && (
+                  <div className="rounded-lg bg-[var(--color-success-subtle)] px-3 py-2 text-sm text-[var(--color-success)]">
+                    ✅ 모든 step이 현재 스펙과 호환됩니다.
+                  </div>
+                )}
+                {validationResult.status === 'WARN' && (
+                  <div className="rounded-lg bg-[var(--color-warning-subtle)] px-3 py-2 text-sm text-[var(--color-warning)]">
+                    <div className="mb-1 font-medium">⚠️ 경고</div>
+                    <ul className="list-inside list-disc space-y-1">
+                      {validationResult.issues.map((issue, idx) => (
+                        <li key={idx}>
+                          Step {issue.stepIndex + 1} [{issue.type}]: {issue.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {validationResult.status === 'BROKEN' && (
+                  <div className="rounded-lg bg-[var(--color-error-subtle)] px-3 py-2 text-sm text-[var(--color-error)]">
+                    <div className="mb-1 font-medium">❌ 호환 불가</div>
+                    <ul className="list-inside list-disc space-y-1">
+                      {validationResult.issues.map((issue, idx) => (
+                        <li key={idx}>
+                          Step {issue.stepIndex + 1} [{issue.type}]: {issue.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 단계별 시각화 */}
         <div className="my-4 flex flex-col gap-2">
           {steps.map((step, index) => {
-            const { method, path } = parseApi(step.api)
             return (
               <div
                 key={index}
@@ -387,18 +463,23 @@ function RecipeDetailPanel({
                 {/* 내용 */}
                 <div className="flex-1">
                   <div className="font-medium text-[var(--color-text-primary)]">
-                    {step.subdomain}
+                    {step.name ?? step.subdomain}
+                  </div>
+                  <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
+                    {step.subdomain}{step.environment ? ` (${step.environment})` : ''}
                   </div>
                   <div className="mt-1 font-mono text-xs text-[var(--color-text-secondary)]">
-                    {method} {path}
+                    {resolveMethod(step)} {resolvePath(step)}
                   </div>
-                  {/* 변수 표시 */}
-                  {step.params && Object.keys(step.params).length > 0 && (
+                  {/* body 변수 표시 */}
+                  {renderBodyVariables(step)}
+                  {/* extract 표시 */}
+                  {step.extract && Object.keys(step.extract).length > 0 && (
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                      {Object.entries(step.params).map(([key, value]) => (
+                      {Object.entries(step.extract).map(([key, jsonPath]) => (
                         <span key={key} className="text-xs">
-                          <span className="text-[var(--color-text-tertiary)]">{key}: </span>
-                          <VariableLabel value={value} />
+                          <span className="text-[var(--color-text-tertiary)]">→ {key}: </span>
+                          <span className="font-mono text-[var(--color-text-tertiary)]">{jsonPath}</span>
                         </span>
                       ))}
                     </div>
@@ -409,9 +490,25 @@ function RecipeDetailPanel({
           })}
         </div>
 
+        {/* 복제 성공 메시지 */}
+        {cloneMutation.isSuccess && (
+          <div className="mb-3 rounded-lg bg-[var(--color-success-subtle)] px-3 py-2 text-sm text-[var(--color-success)]">
+            레시피가 복제되었습니다.
+          </div>
+        )}
+
+        {/* 복제 에러 표시 */}
+        {cloneMutation.isError && (
+          <div className="mb-3 rounded-lg bg-[var(--color-error-subtle)] px-3 py-2 text-sm text-[var(--color-error)]">
+            {cloneMutation.error instanceof Error
+              ? cloneMutation.error.message
+              : '레시피 복제에 실패했습니다.'}
+          </div>
+        )}
+
         {/* 저장 에러 표시 */}
         {updateMutation.isError && (
-          <div className="mb-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <div className="mb-3 rounded-lg bg-[var(--color-error-subtle)] px-3 py-2 text-sm text-[var(--color-error)]">
             {updateMutation.error instanceof Error
               ? updateMutation.error.message
               : '레시피 수정에 실패했습니다.'}
@@ -446,6 +543,14 @@ function RecipeDetailPanel({
               </Button>
               <Button variant="secondary" size="md" onClick={handleEditStart}>
                 수정
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                disabled={cloneMutation.isPending}
+                onClick={() => cloneMutation.mutate()}
+              >
+                {cloneMutation.isPending ? '복제 중...' : '복제'}
               </Button>
               <Button
                 variant="danger"
@@ -517,7 +622,7 @@ function parseStepsJson(stepsJson: string): RecipeStep[] {
   }
 }
 
-/** api 필드 ("POST /api/members") → { method, path } 파싱 */
+/** api 필드 ("POST /api/members") → { method, path } 파싱 (구버전 호환) */
 function parseApi(api: string): { method: string; path: string } {
   const spaceIndex = api.indexOf(' ')
   if (spaceIndex === -1) {
@@ -529,12 +634,69 @@ function parseApi(api: string): { method: string; path: string } {
   }
 }
 
+/** step에서 method를 추출 (신규 필드 우선, 구버전 fallback) */
+function resolveMethod(step: RecipeStep): string {
+  if (step.method) return step.method
+  if (step.api) return parseApi(step.api).method
+  return ''
+}
+
+/** step에서 path를 추출 (신규 필드 우선, 구버전 fallback) */
+function resolvePath(step: RecipeStep): string {
+  if (step.path) return step.path
+  if (step.api) return parseApi(step.api).path
+  return ''
+}
+
+/** step의 body 또는 params에서 변수 라벨을 렌더링 */
+function renderBodyVariables(step: RecipeStep) {
+  // 신규 body 필드 우선
+  if (step.body && Object.keys(step.body).length > 0) {
+    return (
+      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+        {Object.entries(step.body).map(([key, value]) => (
+          <span key={key} className="text-xs">
+            <span className="text-[var(--color-text-tertiary)]">{key}: </span>
+            <VariableLabel value={String(value ?? '')} />
+          </span>
+        ))}
+      </div>
+    )
+  }
+  // 구버전 params fallback
+  if (step.params && Object.keys(step.params).length > 0) {
+    return (
+      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+        {Object.entries(step.params).map(([key, value]) => (
+          <span key={key} className="text-xs">
+            <span className="text-[var(--color-text-tertiary)]">{key}: </span>
+            <VariableLabel value={value} />
+          </span>
+        ))}
+      </div>
+    )
+  }
+  return null
+}
+
 /** steps에서 {{input:라벨}} 패턴의 라벨 목록을 중복 없이 추출 */
 function extractInputVarsFromSteps(steps: RecipeStep[]): string[] {
   const labels = new Set<string>()
   const pattern = /\{\{input:([^}]+)\}\}/g
 
   for (const step of steps) {
+    // 신규 body 필드에서 추출
+    if (step.body) {
+      for (const value of Object.values(step.body)) {
+        if (typeof value !== 'string') continue
+        let match: RegExpExecArray | null
+        while ((match = pattern.exec(value)) !== null) {
+          labels.add(match[1])
+        }
+        pattern.lastIndex = 0
+      }
+    }
+    // 구버전 params fallback
     if (step.params) {
       for (const value of Object.values(step.params)) {
         let match: RegExpExecArray | null

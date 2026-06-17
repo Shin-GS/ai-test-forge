@@ -33,6 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.aitestforge.service.agent.SseEventBufferService.SseBufferedEvent;
+
 /**
  * Agent Loop 오케스트레이션.
  *
@@ -56,6 +58,7 @@ public class AgentLoopService {
     private final WorkspaceService workspaceService;
     private final TwoStageFilterService twoStageFilterService;
     private final SettingsService settingsService;
+    private final SseEventBufferService sseEventBufferService;
 
     @Value("${agent-loop.max-iterations:20}")
     private int maxIterations;
@@ -72,22 +75,39 @@ public class AgentLoopService {
     // 전체 동시 Agent Loop 실행 수 추적
     private final AtomicInteger activeLoopCount = new AtomicInteger(0);
 
-    // 세션별 SSE emitter 관리
-    private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
-
     // 세션별 루프 상태 추적
     private final Map<Long, LoopState> loopStates = new ConcurrentHashMap<>();
 
     /**
      * SSE 연결 생성 (FE가 스트림을 구독할 때 호출).
+     * lastEventId가 있으면 재연결로 간주하여 미전달 이벤트를 재전송한다.
      */
-    public SseEmitter createEmitter(Long sessionId) {
+    public SseEmitter createEmitter(Long sessionId, String lastEventId) {
         SseEmitter emitter = new SseEmitter((long) timeoutSeconds * 1000);
-        emitters.put(sessionId, emitter);
 
         emitter.onCompletion(() -> cleanup(sessionId));
         emitter.onTimeout(() -> cleanup(sessionId));
         emitter.onError(e -> cleanup(sessionId));
+
+        sseEventBufferService.registerEmitter(sessionId, emitter);
+
+        // 재연결 시 lastEventId 이후 버퍼된 이벤트 재전송
+        if (lastEventId != null && !lastEventId.isBlank()) {
+            List<SseBufferedEvent> missedEvents = sseEventBufferService.getEventsAfter(sessionId, lastEventId);
+            for (SseBufferedEvent event : missedEvents) {
+                try {
+                    emitter.send(SseEmitter.event()
+                            .id(event.id())
+                            .name(event.type())
+                            .data(event.data()));
+                } catch (IOException e) {
+                    log.warn("Failed to replay buffered event {} for session {}: {}",
+                            event.id(), sessionId, e.getMessage());
+                    sseEventBufferService.removeEmitter(sessionId);
+                    break;
+                }
+            }
+        }
 
         return emitter;
     }
@@ -360,24 +380,11 @@ public class AgentLoopService {
     }
 
     private void sendSseEvent(Long sessionId, String eventType, Map<String, String> data) {
-        SseEmitter emitter = emitters.get(sessionId);
-        if (emitter == null) return;
-
-        try {
-            emitter.send(SseEmitter.event()
-                    .name(eventType)
-                    .data(data));
-        } catch (IOException e) {
-            log.warn("Failed to send SSE event for session {}: {}", sessionId, e.getMessage());
-            emitters.remove(sessionId);
-        }
+        sseEventBufferService.publish(sessionId, eventType, data);
     }
 
     private void completeEmitter(Long sessionId) {
-        SseEmitter emitter = emitters.remove(sessionId);
-        if (emitter != null) {
-            emitter.complete();
-        }
+        sseEventBufferService.cleanup(sessionId);
         if (loopStates.remove(sessionId) != null) {
             activeLoopCount.decrementAndGet();
         }
@@ -413,7 +420,7 @@ public class AgentLoopService {
     }
 
     private void cleanup(Long sessionId) {
-        emitters.remove(sessionId);
+        sseEventBufferService.removeEmitter(sessionId);
         if (loopStates.remove(sessionId) != null) {
             activeLoopCount.decrementAndGet();
         }

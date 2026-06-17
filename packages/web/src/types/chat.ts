@@ -24,6 +24,8 @@ export interface ToolCallItem {
   path: string
   status: 'pending' | 'active' | 'done' | 'error'
   result?: string
+  arguments?: string
+  responseBody?: string
 }
 
 // SSE 이벤트 타입
@@ -57,9 +59,15 @@ export interface SseErrorEvent {
   message: string
 }
 
+export interface SseNextActionHintEvent {
+  type: 'next_action_hint'
+  content: string
+}
+
 export type SseEvent =
   | SseMessageEvent
   | SseToolCallStartEvent
   | SseToolCallResultEvent
   | SseDoneEvent
   | SseErrorEvent
+  | SseNextActionHintEvent

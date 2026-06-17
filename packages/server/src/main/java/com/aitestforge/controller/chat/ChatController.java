@@ -73,11 +73,15 @@ public class ChatController {
         return ResponseEntity.accepted().build();
     }
 
-    @Operation(summary = "SSE 스트림 연결", description = "Agent Loop 진행 상태를 실시간으로 수신하는 SSE 스트림을 연결합니다.")
+    @Operation(summary = "SSE 스트림 연결", description = "Agent Loop 진행 상태를 실시간으로 수신하는 SSE 스트림을 연결합니다. 재연결 시 Last-Event-ID 헤더 또는 lastEventId 쿼리 파라미터를 통해 미전달 이벤트를 재전송합니다.")
     @GetMapping(value = "/{sessionId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(
-            @Parameter(description = "세션 ID") @PathVariable Long sessionId) {
-        return agentLoopService.createEmitter(sessionId);
+            @Parameter(description = "세션 ID") @PathVariable Long sessionId,
+            @Parameter(description = "마지막 수신 이벤트 ID (재연결 시, 헤더)") @RequestHeader(value = "Last-Event-ID", required = false) String lastEventIdHeader,
+            @Parameter(description = "마지막 수신 이벤트 ID (재연결 시, 쿼리)") @RequestParam(value = "lastEventId", required = false) String lastEventIdParam) {
+        // 헤더 우선, 쿼리 파라미터 fallback
+        String lastEventId = lastEventIdHeader != null ? lastEventIdHeader : lastEventIdParam;
+        return agentLoopService.createEmitter(sessionId, lastEventId);
     }
 
     @Operation(summary = "Tool 실행 결과 전달", description = "FE가 서브도메인 API를 호출한 결과를 BE에 전달합니다.")
