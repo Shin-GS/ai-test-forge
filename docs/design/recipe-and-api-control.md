@@ -14,12 +14,23 @@
 
 ### 기존 코드 현황 (이미 구현됨)
 
-- `Recipe` 엔티티 + CRUD (RecipeService)
+- `Recipe` 엔티티 + CRUD (RecipeService) + visibility, clone, variables
 - `RecipeExecutionService` — SSE 기반 step-by-step 실행, 변수 치환 기본 구현
+- `RecipeVariableResolver` — gen:* 변수 치환, JSONPath extract
+- `RecipeSpecValidator` — 레시피 step별 API 스펙 호환성 검증
+- `RecipeSaverService` — 대화 이력에서 레시피 자동 생성
+- `RecipeSuggestionService` — 유사 레시피 검색/제안
+- `AiBodyGenerator` — AI 기반 body 생성
 - `SubdomainSpec` — OpenAPI JSON 저장, heartbeat, 상태 관리
 - `SpecService` — 등록/갱신/상세조회, endpoint 파싱
+- `SpecControlFilter` — global-exclude + annotation 기반 tool 필터링
+- `SpecMaintenanceScheduler` — heartbeat 미응답 STALE/삭제 처리
 - `AgentLoopService` — 에이전트 루프 기본 구현
-- `AiService` 인터페이스 + 구현체 4개
+- `SseEventBufferService` — SSE 이벤트 버퍼링, 재연결 지원
+- `TwoStageFilterService` — group 기반 필터링
+- `AiService` 인터페이스 + 구현체 4개 (OpenAI, Claude, OpenRouter, Mock) + AiRetryTemplate
+- Client Library 어노테이션 7개 + TestForgeOperationCustomizer
+- FE Agent Runner (useAgentRunner, useAuthGuard, useSseConnection, useAgentRunnerStore)
 
 ## Data Models
 
@@ -136,55 +147,67 @@ public enum SelectStrategy { AI_PICK }
 
 ```
 service/recipe/
-├── RecipeService.java              (기존 CRUD — visibility, clone 추가)
-├── RecipeExecutionService.java     (기존 — 스펙 검증, AI-Assisted 모드, 진행 상태 추가)
-├── RecipeVariableResolver.java     (NEW — 변수 치환 전담, gen:* 생성자 포함)
-├── RecipeSpecValidator.java        (NEW — 실행 전 스펙 검증)
-├── RecipeSuggestionService.java    (NEW — 채팅 요청과 유사한 레시피 검색)
-└── RecipeSaverService.java         (NEW — tool_call 이력에서 레시피 생성)
+├── RecipeService.java              (구현됨 — CRUD, visibility, clone)
+├── RecipeExecutionService.java     (구현됨 — SSE 기반 step-by-step 실행)
+├── RecipeVariableResolver.java     (구현됨 — 변수 치환 전담, gen:* 생성자 포함)
+├── RecipeSpecValidator.java        (구현됨 — 실행 전 스펙 검증)
+├── RecipeSuggestionService.java    (구현됨 — 채팅 요청과 유사한 레시피 검색)
+├── RecipeSaverService.java         (구현됨 — tool_call 이력에서 레시피 생성)
+├── AiBodyGenerator.java            (구현됨 — AI 기반 body 생성)
+├── AiBodyGenerationException.java  (구현됨 — AI body 생성 실패 예외)
+├── BodyStrategy.java               (구현됨 — body 전략 enum)
+└── SelectStrategy.java             (구현됨 — 선택 전략 enum)
 
 service/spec/
-├── SpecService.java                (기존)
-├── SpecToolConverter.java          (기존 — x-test-forge-* 파싱 로직 추가)
-├── SpecControlFilter.java          (NEW — global-exclude + annotation 기반 tool 필터링)
-└── SpecAsyncProcessor.java         (기존)
+├── SpecService.java                (구현됨)
+├── SpecToolConverter.java          (구현됨 — x-test-forge-* 파싱 로직 포함)
+├── SpecControlFilter.java          (구현됨 — global-exclude + annotation 기반 tool 필터링)
+├── SpecAsyncProcessor.java         (구현됨 — 비동기 스펙 파싱)
+└── SpecMaintenanceScheduler.java   (구현됨 — heartbeat 미응답 STALE/삭제 처리)
 
 service/agent/
-├── AgentLoopService.java           (기존 — 2-Stage fallback 추가)
-├── TwoStageFilterService.java      (기존 — group 기반 필터링 추가)
-└── SseEventBufferService.java      (NEW — SSE 이벤트 버퍼링, 재연결 지원)
+├── AgentLoopService.java           (구현됨)
+├── TwoStageFilterService.java      (구현됨 — group 기반 필터링)
+└── SseEventBufferService.java      (구현됨 — SSE 이벤트 버퍼링, 재연결 지원)
+
+service/settings/
+└── SettingsService.java            (구현됨 — AI/Agent Loop 런타임 설정)
 ```
 
 ### 3.2 FE 컴포넌트 구조
 
 ```
 hooks/
-├── useAgentRunner.ts               (NEW — Agent Runner 상태 머신)
-├── useAuthGuard.ts                 (NEW — 인증 상태 관리, 401 감지)
-├── useSseConnection.ts             (NEW — SSE 재연결, Last-Event-ID, 지수 백오프)
-└── useRecipeExecution.ts           (기존 확장 — 스펙 검증 결과 처리, 진행 상태)
+├── useAgentRunner.ts               (구현됨 — Agent Runner 상태 머신)
+├── useAuthGuard.ts                 (구현됨 — 인증 상태 관리, 401 감지)
+└── useSseConnection.ts             (구현됨 — SSE 재연결, Last-Event-ID, 지수 백오프)
 
 services/
-├── recipeApi.ts                    (기존 확장 — 검증, 실행, 저장 API)
-└── agentApi.ts                     (기존 확장 — tool-result 일괄 전달)
+├── recipeApi.ts                    (구현됨 — 검증, 실행, 저장, 제안 API + SSE 스트림 파싱)
+└── chatApi.ts                      (구현됨 — tool-result 전달)
 
 stores/
-├── agentRunnerStore.ts             (NEW — 실행 상태, 대기 중 tool_call, 인증 상태)
-└── recipeStore.ts                  (기존 확장)
+├── useAgentRunnerStore.ts          (구현됨 — 실행 상태, 대기 중 tool_call, 인증 상태)
+└── useChatStore.ts                 (구현됨)
 ```
 
 ### 3.3 Client Library 컴포넌트
 
 ```
 packages/client-spring/src/main/java/com/aitestforge/client/
-├── annotation/                     (NEW — 어노테이션 패키지)
+├── AiTestForgeAutoConfiguration.java  (구현됨 — @AutoConfiguration)
+├── AiTestForgeProperties.java          (구현됨 — @ConfigurationProperties)
+├── SpecRegistrationService.java        (구현됨 — OpenAPI JSON push + heartbeat)
+├── SpecPushScheduler.java              (구현됨 — 주기적 heartbeat 전송)
+├── annotation/                     (구현됨 — 어노테이션 패키지)
 │   ├── TestForgeExclude.java
 │   ├── TestForgeBlock.java
 │   ├── TestForgeConfirm.java
 │   ├── TestForgeReadOnly.java
 │   ├── TestForgeHint.java
-│   └── TestForgeGroup.java
-└── openapi/                        (NEW — springdoc 확장)
+│   ├── TestForgeGroup.java
+│   └── TestForgeGroups.java
+└── openapi/                        (구현됨 — springdoc 확장)
     └── TestForgeOperationCustomizer.java
 ```
 
@@ -612,22 +635,22 @@ const reconnect = (sessionId: string, lastEventId: string) => {
 
 ## Implementation Priority
 
-| 우선순위 | 작업 | 이유 |
+| 우선순위 | 작업 | 상태 |
 |---------|------|------|
-| P0 | Recipe 엔티티 확장 (visibility, variables, validation) | 후속 작업의 기반 |
-| P0 | RecipeVariableResolver (gen:*, JSONPath extract) | 실행 엔진 핵심 |
-| P0 | RecipeSpecValidator | 실행 안정성 핵심 |
-| P1 | 어노테이션 정의 (client-spring) | 서브도메인 개발자 경험 |
-| P1 | SpecControlFilter + x-test-forge-* 파싱 (server) | 어노테이션 동작에 필수 |
-| P1 | RecipeExecutionService AI-Assisted 모드 | 핵심 기능 |
-| P2 | RecipeSaverService (대화 이력 → 레시피 생성) | 생성 UX |
-| P2 | RecipeSuggestionService (유사 레시피 제안) | 사용성 향상 |
-| P2 | 레시피 공유/복제 (visibility, clone) | 팀 협업 |
-| P3 | SseEventBufferService (이벤트 버퍼링) | 안정성 |
-| P3 | FE Agent Runner 상태 머신 (재연결, 동시 tool_call) | 안정성 |
-| P3 | Auth Guard (401 감지, 폴링, 재개) | 안정성 |
-| P3 | 2-Stage fallback | 정확도 개선 |
-| P3 | Global Exclude 설정 | 관리자 기능 |
+| P0 | Recipe 엔티티 확장 (visibility, variables, validation) | ✅ 완료 |
+| P0 | RecipeVariableResolver (gen:*, JSONPath extract) | ✅ 완료 |
+| P0 | RecipeSpecValidator | ✅ 완료 |
+| P1 | 어노테이션 정의 (client-spring) | ✅ 완료 |
+| P1 | SpecControlFilter + x-test-forge-* 파싱 (server) | ✅ 완료 |
+| P1 | RecipeExecutionService AI-Assisted 모드 (AiBodyGenerator) | ✅ 완료 |
+| P2 | RecipeSaverService (대화 이력 → 레시피 생성) | ✅ 완료 |
+| P2 | RecipeSuggestionService (유사 레시피 제안) | ✅ 완료 |
+| P2 | 레시피 공유/복제 (visibility, clone) | ✅ 완료 |
+| P3 | SseEventBufferService (이벤트 버퍼링) | ✅ 완료 |
+| P3 | FE Agent Runner 상태 머신 (재연결, 동시 tool_call) | ✅ 완료 |
+| P3 | Auth Guard (401 감지, 폴링, 재개) | ✅ 완료 |
+| P3 | 2-Stage fallback (TwoStageFilterService) | ✅ 완료 |
+| P3 | Global Exclude 설정 (SpecControlFilter) | ✅ 완료 |
 
 ## Testing Strategy
 

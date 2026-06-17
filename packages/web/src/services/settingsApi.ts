@@ -1,5 +1,13 @@
 const API_BASE = '/api/v1'
 
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('auth_token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 export interface SettingsResponse {
   aiProvider: string
   aiModel: string
@@ -20,7 +28,7 @@ export interface UpdateSettingsRequest {
 
 export async function getSettings(): Promise<SettingsResponse> {
   const res = await fetch(`${API_BASE}/settings`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
   })
   if (!res.ok) throw new Error('설정을 불러올 수 없습니다.')
   return res.json()
@@ -31,7 +39,7 @@ export async function updateSettings(
 ): Promise<SettingsResponse> {
   const res = await fetch(`${API_BASE}/settings`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(request),
   })
   if (!res.ok) throw new Error('설정 저장에 실패했습니다.')

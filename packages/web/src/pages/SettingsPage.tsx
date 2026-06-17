@@ -9,7 +9,7 @@ import {
   updateWorkspace,
 } from '@/services/workspaceApi'
 import { getSettings, updateSettings } from '@/services/settingsApi'
-import { changePassword } from '@/services/authApi'
+import { changePassword, getMe, setupOtp, verifyOtp, disableOtp } from '@/services/authApi'
 import type { WorkspaceResponse } from '@/types/workspace'
 import { Button, Input } from '@/components/ui'
 import { MESSAGES } from '@/constants'
@@ -653,6 +653,166 @@ function ChangePasswordForm() {
   )
 }
 
+function OtpSection() {
+  const queryClient = useQueryClient()
+  const [otpUri, setOtpUri] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  const { data: me, isLoading } = useQuery({
+    queryKey: ['auth-me'],
+    queryFn: getMe,
+  })
+
+  const setupMutation = useMutation({
+    mutationFn: setupOtp,
+    onSuccess: (data) => {
+      setOtpUri(data.otpAuthUri)
+      setMessage(null)
+    },
+    onError: (err: Error) => {
+      setMessage({ type: 'error', text: err.message })
+    },
+  })
+
+  const verifyMutation = useMutation({
+    mutationFn: verifyOtp,
+    onSuccess: () => {
+      setMessage({ type: 'success', text: 'OTP 인증이 활성화되었습니다.' })
+      setOtpUri('')
+      setOtpCode('')
+      queryClient.invalidateQueries({ queryKey: ['auth-me'] })
+    },
+    onError: (err: Error) => {
+      setMessage({ type: 'error', text: err.message })
+    },
+  })
+
+  const disableMutation = useMutation({
+    mutationFn: disableOtp,
+    onSuccess: () => {
+      setMessage({ type: 'success', text: 'OTP 인증이 비활성화되었습니다.' })
+      setOtpUri('')
+      setOtpCode('')
+      queryClient.invalidateQueries({ queryKey: ['auth-me'] })
+    },
+    onError: (err: Error) => {
+      setMessage({ type: 'error', text: err.message })
+    },
+  })
+
+  const otpEnabled = me?.otpEnabled ?? false
+  const isSettingUp = !!otpUri
+
+  function handleToggle() {
+    setMessage(null)
+    if (otpEnabled) {
+      disableMutation.mutate()
+    } else {
+      setupMutation.mutate()
+    }
+  }
+
+  function handleVerify(e: React.FormEvent) {
+    e.preventDefault()
+    if (!otpCode.trim()) return
+    verifyMutation.mutate(otpCode.trim())
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-between border-t border-[var(--color-border)] py-3">
+        <div className="text-sm font-medium">OTP 2단계 인증</div>
+        <span className="text-xs text-[var(--color-text-tertiary)]">로딩 중...</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border-t border-[var(--color-border)] py-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm font-medium">OTP 2단계 인증</div>
+          <div className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
+            TOTP 기반 2단계 인증을 활성화합니다.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={setupMutation.isPending || disableMutation.isPending || isSettingUp}
+          className={`relative h-6 w-11 rounded-full transition-colors disabled:opacity-60 ${
+            otpEnabled
+              ? 'bg-[var(--color-accent)]'
+              : 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border)]'
+          }`}
+          role="switch"
+          aria-checked={otpEnabled}
+          aria-label="OTP 2단계 인증 토글"
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+              otpEnabled ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* OTP 설정 진행 중 (QR URI + 코드 입력) */}
+      {isSettingUp && (
+        <div className="mt-3 rounded-lg bg-[var(--color-bg-tertiary)] p-3">
+          <div className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">
+            인증 앱에 아래 URI를 등록하세요:
+          </div>
+          <div className="mb-3 break-all rounded border border-[var(--color-border)] bg-[var(--color-bg-primary)] p-2 text-xs font-mono text-[var(--color-text-primary)]">
+            {otpUri}
+          </div>
+          <form onSubmit={handleVerify} className="flex items-center gap-2">
+            <Input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              placeholder="6자리 인증 코드"
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="w-36"
+              autoFocus
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              type="submit"
+              disabled={otpCode.length !== 6 || verifyMutation.isPending}
+            >
+              {verifyMutation.isPending ? '인증 중...' : '인증'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={() => {
+                setOtpUri('')
+                setOtpCode('')
+                setMessage(null)
+              }}
+            >
+              취소
+            </Button>
+          </form>
+        </div>
+      )}
+
+      {/* 메시지 표시 */}
+      {message && (
+        <p className={`mt-2 text-xs ${message.type === 'success' ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
+          {message.text}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function SettingsPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
@@ -703,6 +863,9 @@ function SettingsPage() {
 
           {/* 비밀번호 변경 */}
           <ChangePasswordForm />
+
+          {/* OTP 2단계 인증 */}
+          <OtpSection />
 
           {/* 로그아웃 */}
           <div className="mt-8 border-t border-[var(--color-border)] pt-4">

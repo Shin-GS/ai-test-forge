@@ -326,8 +326,10 @@ public interface AiService {
 - 이 서비스 자체에 로그인 페이지 존재 (`/login`)
 - 로그인하지 않으면 모든 기능 접근 불가
 - 초기 구현: ID/PW (관리자가 계정 생성)
+- OTP(TOTP) 2단계 인증 지원 — 설정에서 활성화/비활성화 가능
 - 향후 확장: SSO (Google, GitHub, 사내 LDAP/AD)
 - JWT 기반 세션 유지
+- Rate Limiter: 로그인/OTP 시도 횟수 제한 (5회/5분) — brute-force 방지
 
 ### 서브도메인 보안
 - 서브도메인 인증은 브라우저 쿠키/세션 기반 (FE 직접 호출)
@@ -340,7 +342,7 @@ public interface AiService {
 ### 멀티 유저
 - 사내 팀이 동시에 사용하는 환경 전제
 - 유저별 데이터 분리: 채팅 세션, 인증 토큰, 워크스페이스, 레시피(개인/공유)
-- 메인 서버 인증: SSO 또는 ID/PW (초기 구현은 ID/PW, 향후 SSO)
+- 메인 서버 인증: ID/PW + OTP(TOTP) 2단계 인증 지원 (향후 SSO 확장 예정)
 
 ### 워크스페이스 (Workspace)
 

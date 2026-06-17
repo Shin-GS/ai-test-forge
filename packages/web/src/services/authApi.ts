@@ -60,14 +60,95 @@ interface ChangePasswordRequest {
 }
 
 export async function changePassword(data: ChangePasswordRequest): Promise<void> {
+  const token = localStorage.getItem('auth_token')
   const res = await fetch(`${API_BASE}/auth/password`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(data),
   })
 
   if (!res.ok) {
     const error = await res.json().catch(() => null)
     throw new Error(error?.message ?? '비밀번호 변경에 실패했습니다.')
+  }
+}
+
+// --- OTP ---
+
+interface MeResponse {
+  email: string
+  name: string
+  otpEnabled: boolean
+}
+
+export async function getMe(): Promise<MeResponse> {
+  const token = localStorage.getItem('auth_token')
+  const res = await fetch(`${API_BASE}/auth/me`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null)
+    throw new Error(error?.message ?? '사용자 정보를 불러올 수 없습니다.')
+  }
+
+  return res.json()
+}
+
+interface OtpSetupResponse {
+  otpAuthUri: string
+}
+
+export async function setupOtp(): Promise<OtpSetupResponse> {
+  const token = localStorage.getItem('auth_token')
+  const res = await fetch(`${API_BASE}/auth/otp/setup`, {
+    method: 'POST',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null)
+    throw new Error(error?.message ?? 'OTP 설정에 실패했습니다.')
+  }
+
+  return res.json()
+}
+
+export async function verifyOtp(code: string): Promise<void> {
+  const token = localStorage.getItem('auth_token')
+  const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ code }),
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null)
+    throw new Error(error?.message ?? 'OTP 인증에 실패했습니다.')
+  }
+}
+
+export async function disableOtp(): Promise<void> {
+  const token = localStorage.getItem('auth_token')
+  const res = await fetch(`${API_BASE}/auth/otp`, {
+    method: 'DELETE',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null)
+    throw new Error(error?.message ?? 'OTP 비활성화에 실패했습니다.')
   }
 }

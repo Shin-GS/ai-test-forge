@@ -31,13 +31,15 @@
   - OTP 코드 입력 필드 (6자리)
   - [인증] 버튼
   - "인증 앱에서 코드를 확인하세요" 안내
+  - [← 이전으로] 버튼
 - 인터랙션:
   - OTP 입력 → 인증 성공 → 메인 화면 이동
   - OTP 실패 → "인증 코드가 올바르지 않습니다." 에러
+  - [← 이전으로] 클릭 → 기본 로그인 폼으로 복귀
 
 ## API 연동
 
 | 동작 | API | 설명 |
 |------|-----|------|
-| 로그인 | POST /api/v1/auth/login | email + password → JWT 반환 |
-| OTP 검증 | POST /api/v1/auth/otp/verify | OTP 코드 → 최종 JWT 반환 |
+| 로그인 | POST /api/v1/auth/login | email + password → JWT 반환 (OTP 유저는 otpRequired=true) |
+| OTP 로그인 | POST /api/v1/auth/otp/login | email + OTP 코드 → 최종 JWT 반환 |

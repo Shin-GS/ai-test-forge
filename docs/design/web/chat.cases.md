@@ -119,7 +119,7 @@
 | 동작 | API | 설명 |
 |------|-----|------|
 | 메시지 전송 | POST /api/v1/chat/{sessionId}/messages | SSE 연결 시작됨 |
-| SSE 수신 | GET /api/v1/chat/{sessionId}/stream | tool_call_execute, message, done, error |
+| SSE 수신 | GET /api/v1/chat/{sessionId}/stream | tool_call_start, message, step_progress, done, error |
 | Tool Call 결과 전달 | POST /api/v1/chat/{sessionId}/tool-result | FE가 서브도메인 호출 후 결과 전달 |
 | 세션 목록 | GET /api/v1/chat/sessions | 좌측 사이드바용 |
 | 새 세션 생성 | POST /api/v1/chat/sessions | 첫 메시지 전송 시 자동 |

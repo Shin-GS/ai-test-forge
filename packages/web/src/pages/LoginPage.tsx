@@ -112,6 +112,19 @@ function LoginPage() {
               {isLoading ? '인증 중...' : '인증'}
             </Button>
           </form>
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            className="mt-2 w-full"
+            onClick={() => {
+              setShowOtp(false)
+              setOtpCode('')
+              setError(null)
+            }}
+          >
+            ← 이전으로
+          </Button>
         </div>
       </div>
     )

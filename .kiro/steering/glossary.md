@@ -60,6 +60,9 @@ inclusion: always
 | 메인 서버 | ai-test-forge Spring Boot 애플리케이션 | 코어 서버, 허브 |
 | 클라이언트 라이브러리 | 서브도메인 등록용 Spring Boot Starter | SDK, 플러그인 |
 | OpenAPI JSON | 서브도메인의 Swagger docs 엔드포인트에서 가져온 원본 JSON | Swagger 파일, API 문서 |
+| OTP | One-Time Password, TOTP 기반 2단계 인증 | 2FA 코드 |
+| Rate Limiter | 로그인/OTP 시도 횟수를 제한하는 인메모리 모듈 (brute-force 방지) | 속도 제한기 |
+| 런타임 설정 | 서버 재시작 없이 변경 가능한 AI/Agent Loop 설정 (SettingsService) | 동적 설정 |
 
 ## 레시피 용어
 

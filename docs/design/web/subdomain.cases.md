@@ -60,4 +60,4 @@
 | 동작 | API | 설명 |
 |------|-----|------|
 | 서브도메인 목록 | GET /api/v1/specs | 등록된 전체 서브도메인 + 환경별 상태 |
-| 서브도메인 상세 | GET /api/v1/specs/{name}/{environment} | 특정 서브도메인의 API 목록 (파싱된 엔드포인트) |
+| 서브도메인 상세 | GET /api/v1/specs/{name}/detail?environment={env} | 특정 서브도메인의 API 목록 (파싱된 엔드포인트) |

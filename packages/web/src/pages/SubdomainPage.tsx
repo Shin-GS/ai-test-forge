@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getSpecs, registerSpec } from '@/services/specApi'
 import SubdomainCard from '@/components/subdomain/SubdomainCard'
@@ -7,6 +7,8 @@ import { MESSAGES } from '@/constants'
 
 function SubdomainPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [environmentFilter, setEnvironmentFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [showStaleBanner, setShowStaleBanner] = useState(true)
   const [showUploadForm, setShowUploadForm] = useState(false)
   const [uploadName, setUploadName] = useState('')
@@ -59,10 +61,22 @@ function SubdomainPage() {
     queryFn: getSpecs,
   })
 
-  // 검색 필터
-  const filteredSpecs = specs.filter((spec) =>
-    spec.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  // 유니크 환경 목록 추출
+  const uniqueEnvironments = useMemo(() => {
+    const envSet = new Set(specs.map((spec) => spec.environment))
+    return Array.from(envSet).sort()
+  }, [specs])
+
+  // 검색 + 환경 + 상태 필터
+  const filteredSpecs = specs.filter((spec) => {
+    const matchesSearch = spec.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+    const matchesEnvironment =
+      !environmentFilter || spec.environment === environmentFilter
+    const matchesStatus = !statusFilter || spec.status === statusFilter
+    return matchesSearch && matchesEnvironment && matchesStatus
+  })
 
   // ACTIVE 우선, STALE 하단 정렬
   const sortedSpecs = [...filteredSpecs].sort((a, b) => {
@@ -162,6 +176,29 @@ function SubdomainPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <select
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:outline-none"
+            value={environmentFilter}
+            onChange={(e) => setEnvironmentFilter(e.target.value)}
+            aria-label="환경 필터"
+          >
+            <option value="">전체 환경</option>
+            {uniqueEnvironments.map((env) => (
+              <option key={env} value={env}>
+                {env}
+              </option>
+            ))}
+          </select>
+          <select
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:outline-none"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="상태 필터"
+          >
+            <option value="">전체 상태</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="STALE">STALE</option>
+          </select>
           <Button variant="secondary" size="sm" onClick={() => setShowUploadForm(true)}>
             📄 수동 등록
           </Button>

@@ -14,28 +14,32 @@ ai-test-forge/
 │   │   └── src/main/
 │   │       ├── java/com/aitestforge/
 │   │       │   ├── Application.java
-│   │       │   ├── config/              # 설정 (Async, Swagger, WebMvc, AI)
+│   │       │   ├── config/              # 설정 (Async, Security, Swagger, WebMvc)
 │   │       │   ├── controller/          # REST 컨트롤러
-│   │       │   │   ├── chat/            # 채팅 대화 엔드포인트
-│   │       │   │   ├── spec/            # API 스펙 관리 엔드포인트
 │   │       │   │   ├── auth/            # 메인 서버 인증 엔드포인트
+│   │       │   │   ├── chat/            # 채팅 대화 엔드포인트
 │   │       │   │   ├── recipe/          # 레시피 관리 엔드포인트
+│   │       │   │   ├── settings/        # AI/Agent Loop 설정 엔드포인트
+│   │       │   │   ├── spec/            # API 스펙 관리 엔드포인트
 │   │       │   │   └── workspace/       # 워크스페이스 관리 엔드포인트
 │   │       │   ├── service/             # 비즈니스 로직
-│   │       │   │   ├── chat/            # 채팅 세션, 메시지 처리
 │   │       │   │   ├── agent/           # 에이전트 루프 오케스트레이션
-│   │       │   │   ├── spec/            # API 스펙 저장, 파싱, 비동기 처리
 │   │       │   │   ├── auth/            # 메인 서버 인증
-│   │       │   │   ├── recipe/          # 레시피 CRUD, 실행
+│   │       │   │   ├── chat/            # 채팅 세션, 메시지 처리
+│   │       │   │   ├── recipe/          # 레시피 CRUD, 실행, 변수 치환, 스펙 검증
+│   │       │   │   ├── settings/        # AI/Agent Loop 런타임 설정
+│   │       │   │   ├── spec/            # API 스펙 저장, 파싱, 비동기 처리, 유지보수
 │   │       │   │   └── workspace/       # 워크스페이스 관리
 │   │       │   ├── infra/              # 외부 시스템 추상화
 │   │       │   │   ├── ai/             # AI 서비스 인터페이스 + 구현체
 │   │       │   │   │   ├── AiService.java          # 인터페이스
+│   │       │   │   │   ├── AiRetryTemplate.java    # 재시도 로직
 │   │       │   │   │   ├── OpenAiService.java      # OpenAI 구현체
 │   │       │   │   │   ├── ClaudeAiService.java    # Claude 구현체
 │   │       │   │   │   ├── OpenRouterService.java  # OpenRouter 구현체
-│   │       │   │   │   └── MockAiService.java      # 로컬 개발용 Mock
-│   │       │   │   └── auth/            # JWT 인증 필터 + 토큰 프로바이더
+│   │       │   │   │   ├── MockAiService.java      # 로컬 개발용 Mock
+│   │       │   │   │   └── dto/                    # AI 관련 DTO (AiChatResponse, ChatMessage, ToolCall, ToolControl, ToolDefinition)
+│   │       │   │   └── auth/            # JWT 인증 필터 + 토큰 프로바이더 + Rate Limiter
 │   │       │   ├── domain/             # JPA 엔티티
 │   │       │   │   ├── chat/           # ChatSession, ChatMessage, SessionStatus, MessageRole
 │   │       │   │   ├── spec/           # SubdomainSpec, SpecStatus
@@ -44,8 +48,14 @@ ai-test-forge/
 │   │       │   │   └── workspace/      # Workspace, WorkspaceMapping
 │   │       │   ├── repository/         # JPA Repository
 │   │       │   ├── dto/                # 요청/응답 DTO (Java record)
+│   │       │   │   ├── auth/           # 인증 DTO
+│   │       │   │   ├── chat/           # 채팅 DTO
+│   │       │   │   ├── recipe/         # 레시피 DTO
+│   │       │   │   ├── settings/       # 설정 DTO
+│   │       │   │   ├── spec/           # 스펙 DTO
+│   │       │   │   └── workspace/      # 워크스페이스 DTO
 │   │       │   └── common/             # 공통 유틸, 예외 처리
-│   │       │       ├── exception/      # BusinessException, ErrorCode
+│   │       │       ├── exception/      # BusinessException, ErrorCode, GlobalExceptionHandler
 │   │       │       └── util/           # 공통 유틸리티
 │   │       └── resources/
 │   │           ├── application.yml
@@ -62,17 +72,36 @@ ai-test-forge/
 │   │       ├── App.tsx
 │   │       ├── index.css
 │   │       ├── components/
-│   │       │   ├── ui/                 # 재사용 UI (Button, Input, Modal, Toast)
-│   │       │   ├── chat/              # 채팅 전용 (MessageBubble, InputBar, ToolCallCard)
-│   │       │   ├── subdomain/         # 서브도메인 관련 컴포넌트
-│   │       │   ├── recipe/            # 레시피 관련 컴포넌트
-│   │       │   └── layout/           # 레이아웃 (Sidebar, Header)
-│   │       ├── pages/                 # 페이지 컴포넌트 (Chat, Settings, SubdomainList)
+│   │       │   ├── ui/                 # 재사용 UI (Button, Input, Card, Alert, Badge, Spinner, Toast)
+│   │       │   ├── chat/              # 채팅 전용 (ChatInputBar, MessageBubble, Onboarding, SessionSidebar, ToolCallConfirmDialog, ToolCallProgress)
+│   │       │   ├── subdomain/         # 서브도메인 관련 컴포넌트 (SubdomainCard)
+│   │       │   ├── recipe/            # 레시피 관련 컴포넌트 (RecipeCard)
+│   │       │   └── layout/           # 레이아웃 (AppHeader, AppLayout, TabNav)
+│   │       ├── pages/                 # 페이지 컴포넌트 (ChatPage, LoginPage, RecipePage, SettingsPage, SubdomainPage, SubdomainDetailPage)
 │   │       ├── hooks/                 # 커스텀 hooks
+│   │       │   ├── useAgentRunner.ts  # Agent Runner 상태 머신
+│   │       │   ├── useAuthGuard.ts    # 서브도메인 인증 상태 관리, 401 감지
+│   │       │   └── useSseConnection.ts # SSE 재연결, Last-Event-ID, 지수 백오프
 │   │       ├── services/             # API 호출 레이어
+│   │       │   ├── authApi.ts
+│   │       │   ├── chatApi.ts
+│   │       │   ├── recipeApi.ts
+│   │       │   ├── settingsApi.ts
+│   │       │   ├── specApi.ts
+│   │       │   └── workspaceApi.ts
 │   │       ├── stores/               # Zustand 상태 관리
+│   │       │   ├── useAgentRunnerStore.ts
+│   │       │   ├── useAuthStore.ts
+│   │       │   ├── useChatStore.ts
+│   │       │   └── useWorkspaceStore.ts
 │   │       ├── types/                # TypeScript 타입 정의
-│   │       └── constants/            # 상수
+│   │       │   ├── agentRunner.ts
+│   │       │   ├── chat.ts
+│   │       │   ├── recipe.ts
+│   │       │   ├── spec.ts
+│   │       │   └── workspace.ts
+│   │       ├── constants/            # 상수 (messages.ts 등)
+│   │       └── utils/               # 유틸리티 함수
 │   │
 │   └── client-spring/                  # Spring Boot Starter (클라이언트 라이브러리)
 │       ├── build.gradle.kts
@@ -136,7 +165,7 @@ Controller → Service → Infra → External
 | 서브패키지 | 역할 | 인터페이스 | Mock 전략 |
 |-----------|------|-----------|-----------|
 | `ai/` | AI 채팅 완성 | `AiService` | `@Profile("local")` MockAiService |
-| `auth/` | JWT 인증 처리 | 없음 (단일 구현) | 없음 |
+| `auth/` | JWT 인증 처리 + Rate Limiter | 없음 (단일 구현) | 없음 |
 
 **규칙:**
 - 외부 서비스는 인터페이스 + 구현체 + Mock 구조 유지
@@ -150,7 +179,17 @@ packages/client-spring/src/main/java/com/aitestforge/client/
 ├── AiTestForgeAutoConfiguration.java   # @AutoConfiguration
 ├── AiTestForgeProperties.java          # @ConfigurationProperties
 ├── SpecRegistrationService.java        # OpenAPI JSON 가져와서 메인 서버에 Push
-└── SpecPushScheduler.java              # 주기적 재등록 (선택)
+├── SpecPushScheduler.java              # 주기적 heartbeat 전송
+├── annotation/                         # API 제어 어노테이션
+│   ├── TestForgeExclude.java
+│   ├── TestForgeBlock.java
+│   ├── TestForgeConfirm.java
+│   ├── TestForgeReadOnly.java
+│   ├── TestForgeHint.java
+│   ├── TestForgeGroup.java
+│   └── TestForgeGroups.java
+└── openapi/                            # springdoc 확장
+    └── TestForgeOperationCustomizer.java
 ```
 
 **설계 원칙:**

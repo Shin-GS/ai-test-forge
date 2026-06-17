@@ -22,11 +22,12 @@
 ## Case 2: AI 설정
 - 조건: 두 번째 섹션
 - 표시:
-  - Provider 드롭다운: OpenAI / Claude / Mock
-  - Model 드롭다운: 선택된 provider의 모델 목록
+  - Provider 드롭다운: OpenAI / Claude / OpenRouter / Mock
+  - Model 텍스트 입력: 사용할 AI 모델명 직접 입력 (예: gpt-4o, claude-sonnet-4-20250514)
   - "다음 액션" 힌트: ON / OFF 토글
 - 인터랙션:
-  - 드롭다운 변경 → 즉시 저장
+  - Provider 드롭다운 변경 → 즉시 저장
+  - Model 입력 후 포커스 아웃 → 즉시 저장
   - 토글 변경 → 즉시 저장
 
 ## Case 3: Agent Loop 설정
@@ -42,12 +43,14 @@
 - 조건: 네 번째 섹션
 - 표시:
   - 이메일 (읽기 전용)
+  - 이름 (읽기 전용)
   - 비밀번호 변경: [비밀번호 변경] 버튼
   - OTP 설정: 활성/비활성 토글
   - [로그아웃] 버튼
 - 인터랙션:
-  - [비밀번호 변경] → 현재 비밀번호 + 새 비밀번호 입력 모달
-  - OTP 토글 → QR 코드 표시 + 확인 코드 입력
+  - [비밀번호 변경] → 현재 비밀번호 + 새 비밀번호 입력 폼
+  - OTP 토글 ON → OTP setup API 호출 → otpauth:// URI 표시 + 6자리 코드 입력 → 인증 성공 시 활성화
+  - OTP 토글 OFF → OTP 비활성화 API 호출
   - [로그아웃] → 세션 종료 + 로그인 페이지로 이동
 
 ## API 연동
@@ -61,3 +64,6 @@
 | 설정 조회 | GET /api/v1/settings | AI, Agent Loop 설정 |
 | 설정 수정 | PUT /api/v1/settings | 설정 변경 |
 | 비밀번호 변경 | PUT /api/v1/auth/password | 비밀번호 변경 |
+| OTP 설정 | POST /api/v1/auth/otp/setup | TOTP secret 생성 + QR URI 반환 |
+| OTP 활성화 | POST /api/v1/auth/otp/verify | OTP 코드 검증 후 활성화 |
+| OTP 비활성화 | DELETE /api/v1/auth/otp | OTP 비활성화 |

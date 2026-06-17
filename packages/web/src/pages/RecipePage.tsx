@@ -8,6 +8,7 @@ import { MESSAGES } from '@/constants'
 
 function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTag, setSelectedTag] = useState('')
   const navigate = useNavigate()
 
   const {
@@ -20,14 +21,18 @@ function RecipePage() {
     queryFn: getRecipes,
   })
 
-  // 검색 필터: 레시피명, 설명, 태그로 필터
+  // 유니크 태그 목록 추출
+  const uniqueTags = [...new Set(recipes.flatMap((recipe) => recipe.tags))].sort()
+
+  // 검색 + 태그 필터: 레시피명, 설명, 태그로 필터
   const filteredRecipes = recipes.filter((recipe) => {
     const query = searchQuery.toLowerCase()
-    return (
+    const matchesSearch =
       recipe.name.toLowerCase().includes(query) ||
       recipe.description.toLowerCase().includes(query) ||
       recipe.tags.some((tag) => tag.toLowerCase().includes(query))
-    )
+    const matchesTag = selectedTag === '' || recipe.tags.includes(selectedTag)
+    return matchesSearch && matchesTag
   })
 
   // "자주 사용" 섹션: usageCount > 0인 레시피, 사용 횟수 순 정렬
@@ -102,6 +107,18 @@ function RecipePage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <select
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:outline-none"
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+          >
+            <option value="">전체 태그</option>
+            {uniqueTags.map((tag) => (
+              <option key={tag} value={tag}>
+                {tag}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* 자주 사용 섹션 */}

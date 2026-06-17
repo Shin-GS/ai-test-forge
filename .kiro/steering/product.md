@@ -95,6 +95,7 @@ ai-test-forge/
 ├── .kiro/
 │   ├── agents/
 │   ├── hooks/
+│   ├── specs/
 │   └── steering/
 ├── .env.example
 ├── build.gradle.kts         # 루트 빌드 (멀티 모듈)
@@ -139,9 +140,10 @@ cd packages/web && pnpm build                  # 프로덕션 빌드
 | `/api/v1/**` | 서버 API | 메인 서버 REST API |
 | `/api/v1/chat/**` | 서버 API | 채팅/대화 엔드포인트 |
 | `/api/v1/specs/**` | 서버 API | API 스펙 관리 (등록, 조회) |
-| `/api/v1/auth/**` | 서버 API | 메인 서버 인증 (로그인, 회원가입) |
+| `/api/v1/auth/**` | 서버 API | 메인 서버 인증 (로그인, 회원가입, OTP) |
 | `/api/v1/recipes/**` | 서버 API | 레시피 CRUD + 실행 |
 | `/api/v1/workspaces/**` | 서버 API | 워크스페이스 CRUD |
+| `/api/v1/settings` | 서버 API | AI/Agent Loop 런타임 설정 |
 | `/health` | 서버 | 헬스 체크 |
 
 ## API 설계

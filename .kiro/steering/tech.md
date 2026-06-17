@@ -50,9 +50,14 @@ inclusion: always
 - **Spring Boot 4.0.x** (Spring Framework 7.x)
 - **Spring Data JPA** — MySQL 연동
 - **Spring Boot Validation** — 요청 검증 (@Valid)
+- **Spring Security** — 메인 서버 인증/인가
 - **MySQL Connector/J** — DB 드라이버
 - **Lombok** — 보일러플레이트 제거
 - **springdoc-openapi 3.0.x** — Swagger UI + OpenAPI 3 문서 자동 생성
+- **jjwt 0.12.x** — JWT 토큰 생성/검증
+- **totp (dev.samstevens.totp)** — OTP 2단계 인증
+- **json-path** — JSONPath 기반 데이터 추출 (레시피 extract)
+- **Spring Boot Actuator + Micrometer Prometheus** — 모니터링/메트릭
 
 ### Gradle 설정
 - Gradle Kotlin DSL

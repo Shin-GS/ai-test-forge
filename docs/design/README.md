@@ -18,8 +18,7 @@ docs/design/
 │   ├── components.css   # 공통 컴포넌트 스타일
 │   ├── base.css         # 리셋, 레이아웃 기본
 │   └── system.html      # 컴포넌트 카탈로그 (브라우저에서 확인)
-├── web/                 # 채팅 UI 화면별 HTML + .cases.md
-└── assets/              # 아이콘, 이미지
+└── web/                 # 채팅 UI 화면별 HTML + .cases.md
 ```
 
 ## 화면 목록

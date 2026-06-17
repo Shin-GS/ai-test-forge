@@ -87,15 +87,17 @@
 
 ```
 docs/test/
-├── index.html                 # 통합 뷰어 (향후)
 ├── README.md                  # 이 파일
-├── shared/
+├── index.html                 # 통합 뷰어 (향후)
+├── shared/                    # 공통 테스트 인프라 (향후 생성)
 │   ├── test-base.css          # 공통 스타일
 │   ├── test-manifest.js       # 파일 목록
 │   └── test-renderer.js       # 렌더링 엔진
-└── web/                       # 기능별 테스트 데이터
+└── web/                       # 기능별 테스트 데이터 (향후 생성)
     └── {기능}.js              # 구현 후 생성
 ```
+
+> 현재는 README.md만 존재합니다. 실제 테스트 데이터 파일(.js)은 기능 구현 완료 후 qa-tester 에이전트가 생성합니다.
 
 ## 참고
 
