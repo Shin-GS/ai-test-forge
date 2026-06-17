@@ -12,6 +12,7 @@ import com.aitestforge.dto.auth.OtpVerifyRequest;
 import com.aitestforge.dto.auth.RegisterRequest;
 import com.aitestforge.dto.auth.UserResponse;
 import com.aitestforge.infra.auth.JwtTokenProvider;
+import com.aitestforge.infra.auth.RateLimiter;
 import com.aitestforge.repository.UserRepository;
 import dev.samstevens.totp.code.CodeVerifier;
 import dev.samstevens.totp.code.DefaultCodeGenerator;
@@ -38,8 +39,14 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RateLimiter rateLimiter;
 
     public LoginResponse login(LoginRequest request) {
+        String rateLimitKey = "login:" + request.email();
+        if (rateLimiter.isRateLimited(rateLimitKey)) {
+            throw new BusinessException(ErrorCode.AGENT_LOOP_CONCURRENT_LIMIT);
+        }
+
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
 
@@ -55,6 +62,7 @@ public class AuthService {
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail());
         log.info("User logged in: {}", user.getEmail());
+        rateLimiter.reset(rateLimitKey);
 
         return LoginResponse.success(token, user.getEmail(), user.getName());
     }
