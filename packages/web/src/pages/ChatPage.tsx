@@ -1,11 +1,14 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useChatStore } from '@/stores/useChatStore'
+import { useAgentRunnerStore } from '@/stores/useAgentRunnerStore'
+import { useAgentRunner } from '@/hooks/useAgentRunner'
 import { suggestRecipes } from '@/services/recipeApi'
 import type { RecipeResponse } from '@/types/recipe'
 import SessionSidebar from '@/components/chat/SessionSidebar'
 import Onboarding from '@/components/chat/Onboarding'
 import MessageBubble from '@/components/chat/MessageBubble'
 import ToolCallProgress from '@/components/chat/ToolCallProgress'
+import AuthRequiredAlert from '@/components/chat/AuthRequiredAlert'
 import ChatInputBar from '@/components/chat/ChatInputBar'
 import { Button } from '@/components/ui'
 
@@ -19,6 +22,13 @@ function ChatPage() {
   const setActiveSession = useChatStore((s) => s.setActiveSession)
   const startNewChat = useChatStore((s) => s.startNewChat)
   const sendUserMessage = useChatStore((s) => s.sendUserMessage)
+
+  // Agent Runner 상태 (인증 필요 감지)
+  const pauseReason = useAgentRunnerStore((s) => s.pauseReason)
+  const pauseData = useAgentRunnerStore((s) => s.pauseData)
+  const { resume } = useAgentRunner()
+
+  const isAuthRequired = pauseReason === 'auth'
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -133,16 +143,21 @@ function ChatPage() {
                 <MessageBubble key={msg.id} message={msg} />
               ))}
 
-              {/* Agent Loop 진행 중: tool call progress */}
-              {isLoading && toolCalls.length > 0 && (
+              {/* Agent Loop 진행 중 또는 완료: tool call progress */}
+              {toolCalls.length > 0 && (
                 <div className="flex gap-3 px-4 py-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-tertiary)] text-sm">
                     🤖
                   </div>
                   <div className="max-w-[70%]">
-                    <ToolCallProgress toolCalls={toolCalls} />
+                    <ToolCallProgress toolCalls={toolCalls} isLoading={isLoading} />
                   </div>
                 </div>
+              )}
+
+              {/* 인증 필요 Alert */}
+              {isAuthRequired && (
+                <AuthRequiredAlert pauseData={pauseData} onResume={resume} />
               )}
 
               {/* 레시피 제안 */}
@@ -188,7 +203,12 @@ function ChatPage() {
         </div>
 
         {/* 입력 바 */}
-        <ChatInputBar onSend={handleSend} isLoading={isLoading} />
+        <ChatInputBar
+          onSend={handleSend}
+          isLoading={isLoading}
+          disabled={isAuthRequired}
+          disabledPlaceholder="로그인 후 '계속 진행' 버튼을 눌러주세요"
+        />
       </div>
     </div>
   )

@@ -4,15 +4,19 @@ import { MESSAGES } from '@/constants'
 interface ChatInputBarProps {
   onSend: (message: string) => void
   isLoading: boolean
+  disabled?: boolean
+  disabledPlaceholder?: string
 }
 
 const MAX_ROWS = 5
 const LINE_HEIGHT = 24 // px per line (1.5rem at 16px)
 const PADDING = 24 // top + bottom padding (12px * 2)
 
-function ChatInputBar({ onSend, isLoading }: ChatInputBarProps) {
+function ChatInputBar({ onSend, isLoading, disabled = false, disabledPlaceholder }: ChatInputBarProps) {
   const [value, setValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const isDisabled = isLoading || disabled
 
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current
@@ -29,7 +33,7 @@ function ChatInputBar({ onSend, isLoading }: ChatInputBarProps) {
 
   const handleSubmit = () => {
     const trimmed = value.trim()
-    if (!trimmed || isLoading) return
+    if (!trimmed || isDisabled) return
     onSend(trimmed)
     setValue('')
     // 높이 리셋
@@ -45,7 +49,13 @@ function ChatInputBar({ onSend, isLoading }: ChatInputBarProps) {
     }
   }
 
-  const canSend = value.trim().length > 0 && !isLoading
+  const canSend = value.trim().length > 0 && !isDisabled
+
+  const placeholder = disabledPlaceholder && disabled
+    ? disabledPlaceholder
+    : isLoading
+      ? MESSAGES.chat.inputLoading
+      : MESSAGES.chat.inputPlaceholder
 
   return (
     <div className="border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-4 py-3">
@@ -55,10 +65,8 @@ function ChatInputBar({ onSend, isLoading }: ChatInputBarProps) {
           value={value}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          disabled={isLoading}
-          placeholder={
-            isLoading ? MESSAGES.chat.inputLoading : MESSAGES.chat.inputPlaceholder
-          }
+          disabled={isDisabled}
+          placeholder={placeholder}
           rows={1}
           className="flex-1 resize-none rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-3 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] outline-none transition-[border-color] focus:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
           style={{ minHeight: '44px', maxHeight: `${LINE_HEIGHT * MAX_ROWS + PADDING}px` }}

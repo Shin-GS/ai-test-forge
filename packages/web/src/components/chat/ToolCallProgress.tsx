@@ -2,6 +2,7 @@ import type { ToolCallItem } from '@/types/chat'
 
 interface ToolCallProgressProps {
   toolCalls: ToolCallItem[]
+  isLoading?: boolean
 }
 
 function getStatusIcon(status: ToolCallItem['status']): string {
@@ -32,16 +33,21 @@ function getStatusClass(status: ToolCallItem['status']): string {
   }
 }
 
-function ToolCallProgress({ toolCalls }: ToolCallProgressProps) {
+function ToolCallProgress({ toolCalls, isLoading = true }: ToolCallProgressProps) {
   if (toolCalls.length === 0) return null
 
   const completedCount = toolCalls.filter((tc) => tc.status === 'done').length
   const totalCount = toolCalls.length
+  const allDone = !isLoading && completedCount === totalCount && totalCount > 0
+
+  const headerText = allDone
+    ? `✅ API 호출 완료 (${completedCount}/${totalCount})`
+    : `🔄 API 호출 중... (${completedCount}/${totalCount})`
 
   return (
     <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] p-3">
       <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
-        🔄 API 호출 중... ({completedCount}/{totalCount})
+        {headerText}
       </div>
 
       {toolCalls.map((tc) => (

@@ -9,9 +9,10 @@ import { MESSAGES } from '@/constants'
 
 interface RecipeCardProps {
   recipe: RecipeResponse
+  onDetail?: (recipeId: number) => void
 }
 
-function RecipeCard({ recipe }: RecipeCardProps) {
+function RecipeCard({ recipe, onDetail }: RecipeCardProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -67,7 +68,7 @@ function RecipeCard({ recipe }: RecipeCardProps) {
   )
 
   const handleDetail = () => {
-    // 상세 보기 placeholder
+    onDetail?.(recipe.id)
   }
 
   const handleDelete = () => {
