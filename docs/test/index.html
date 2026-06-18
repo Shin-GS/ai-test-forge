@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Test Checklist — AI Test Forge</title>
+  <link rel="stylesheet" href="shared/test-base.css">
+</head>
+<body>
+  <div id="app">
+    <div class="empty-state"><p>테스트 데이터 로딩 중...</p></div>
+  </div>
+
+  <script type="module">
+    import TestRenderer from "./shared/test-renderer.js";
+    import TEST_MANIFEST from "./shared/test-manifest.js";
+
+    const renderer = new TestRenderer("app");
+    window.renderer = renderer;
+
+    // 동적으로 모든 테스트 모듈 로드
+    async function loadModules() {
+      for (const entry of TEST_MANIFEST) {
+        try {
+          const module = await import(entry.file);
+          const data = module.default;
+          // screen 필드가 없으면 name에서 추출
+          if (!data.screen) {
+            data.screen = entry.name;
+          }
+          renderer.registerModule(data);
+        } catch (err) {
+          console.warn(`[QA] 모듈 로드 실패: ${entry.file}`, err);
+        }
+      }
+      renderer.render();
+    }
+
+    loadModules();
+  </script>
+</body>
+</html>

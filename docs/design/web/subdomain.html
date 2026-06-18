@@ -50,7 +50,8 @@
     <button class="active" data-case="1">목록 (정상)</button>
     <button data-case="2">상세 (API 목록)</button>
     <button data-case="3">빈 상태</button>
-    <button data-case="4">STALE 경고</button>
+    <button data-case="4">수동 등록</button>
+    <button data-case="5">STALE 경고</button>
   </nav>
 
   <!-- Case 1: 목록 -->
@@ -210,8 +211,63 @@
     </div>
   </div>
 
-  <!-- Case 4: STALE 경고 -->
+  <!-- Case 4: 수동 등록 -->
   <div class="screen" id="case-4">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item active" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <div class="subdomain-page">
+          <div class="subdomain-page__inner">
+            <div class="filter-bar">
+              <input class="input" placeholder="🔍 서버 검색..." />
+              <button class="btn btn--secondary btn--sm">환경: 전체 ▾</button>
+              <button class="btn btn--secondary btn--sm">상태: 전체 ▾</button>
+              <button class="btn btn--primary btn--sm" style="margin-left:auto;">📄 수동 등록</button>
+            </div>
+            <!-- 수동 등록 폼 -->
+            <div class="card" style="margin-bottom:var(--space-4);">
+              <h3 style="font-size:var(--font-size-base);font-weight:var(--font-weight-semibold);margin-bottom:var(--space-4);">📄 수동 등록</h3>
+              <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+                <div>
+                  <label style="display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-1);">서브도메인 이름 <span style="color:var(--color-error);">*</span></label>
+                  <input class="input" placeholder="예: payment-service" />
+                </div>
+                <div>
+                  <label style="display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-1);">환경 <span style="color:var(--color-error);">*</span></label>
+                  <input class="input" placeholder="예: dev, feature-login" />
+                </div>
+                <div>
+                  <label style="display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-1);">Base URL <span style="color:var(--color-error);">*</span></label>
+                  <input class="input" placeholder="예: http://payment.dev.svc:8080" />
+                </div>
+                <div>
+                  <label style="display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-1);">OpenAPI JSON 파일 <span style="color:var(--color-error);">*</span></label>
+                  <input type="file" accept=".json" style="font-size:var(--font-size-sm);color:var(--color-text-secondary);padding:var(--space-2) 0;" />
+                </div>
+                <div style="display:flex;gap:var(--space-3);margin-top:var(--space-2);">
+                  <button class="btn btn--primary" disabled>등록</button>
+                  <button class="btn btn--secondary">취소</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 5: STALE 경고 -->
+  <div class="screen" id="case-5">
     <div class="app-container">
       <header class="app-header">
         <div class="app-header__logo">🔨 AI Test Forge</div>

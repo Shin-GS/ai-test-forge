@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useChatStore } from '@/stores/useChatStore'
 import { useAgentRunnerStore } from '@/stores/useAgentRunnerStore'
 import { useAgentRunner } from '@/hooks/useAgentRunner'
@@ -14,6 +15,7 @@ import ChatInputBar from '@/components/chat/ChatInputBar'
 import { Button } from '@/components/ui'
 
 function ChatPage() {
+  const location = useLocation()
   const sessions = useChatStore((s) => s.sessions)
   const activeSessionId = useChatStore((s) => s.activeSessionId)
   const messages = useChatStore((s) => s.messages)
@@ -48,6 +50,17 @@ function ChatPage() {
   useEffect(() => {
     fetchSessions()
   }, [fetchSessions])
+
+  // 서브도메인 상세 → 채팅 자동 전송 (prefillMessage)
+  useEffect(() => {
+    const state = location.state as { prefillMessage?: string } | null
+    if (state?.prefillMessage) {
+      startNewChat(state.prefillMessage)
+      // state 클리어 (뒤로 가기 시 재실행 방지)
+      window.history.replaceState({}, '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // 메시지 변경 시 스크롤 하단 추적
   useEffect(() => {

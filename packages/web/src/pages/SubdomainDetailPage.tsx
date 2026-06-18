@@ -74,7 +74,7 @@ function SubdomainDetailPage() {
   }
 
   const handleUseChatClick = () => {
-    navigate('/')
+    navigate('/', { state: { prefillMessage: `${detail?.name}의 API를 호출해줘` } })
   }
 
   // 로딩 상태

@@ -38,6 +38,7 @@
     <button data-case="4">인증 필요 (401)</button>
     <button data-case="5">에러 발생</button>
     <button data-case="6">레시피 실행</button>
+    <button data-case="7">레시피 자동 제안</button>
   </nav>
 
   <!-- Case 1: 첫 접속 -->
@@ -386,6 +387,71 @@
                     <li>이력서: "자동 생성 이력서" (ID: 334)</li>
                     <li>입사지원: 포지션 456 지원 완료 (ID: 556)</li>
                   </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-input" rows="1" placeholder="메시지를 입력하세요..."></textarea>
+              <button class="btn btn--primary">전송</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Case 7: 레시피 자동 제안 -->
+  <div class="screen" id="case-7">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="app-header__logo">🔨 AI Test Forge</div>
+        <div class="app-header__workspace">🌐 로그인 리팩토링 ▾</div>
+        <div style="width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);color:#fff;">KS</div>
+      </header>
+      <nav class="tab-nav">
+        <a class="tab-nav__item active" href="chat.html">💬 채팅</a>
+        <a class="tab-nav__item" href="subdomain.html">📡 서브도메인</a>
+        <a class="tab-nav__item" href="recipe.html">📋 레시피</a>
+        <a class="tab-nav__item" href="settings.html">⚙️ 설정</a>
+      </nav>
+      <div class="main-content">
+        <aside class="sidebar">
+          <div style="padding:var(--space-3) var(--space-4);font-size:var(--font-size-xs);color:var(--color-text-tertiary);font-weight:var(--font-weight-medium);">채팅 세션</div>
+          <button class="sidebar__item">어제 — 회원 생성 테스트</button>
+          <div style="padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-border);margin-top:auto;">
+            <button class="btn btn--ghost btn--sm" style="width:100%;">+ 새 대화</button>
+          </div>
+        </aside>
+        <div class="chat-area">
+          <div class="chat-messages">
+            <div class="messages-container">
+              <div class="message message--user">
+                <div class="message__avatar">👤</div>
+                <div class="message__content">입사지원 데이터 만들어줘</div>
+              </div>
+              <!-- 레시피 자동 제안 카드 -->
+              <div style="max-width:600px;margin:var(--space-4) auto;padding:var(--space-4);background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-lg);">
+                <div style="font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);margin-bottom:var(--space-3);">📋 유사한 레시피가 있습니다</div>
+                <div style="display:flex;flex-direction:column;gap:var(--space-2);">
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) var(--space-3);background:var(--color-bg-tertiary);border-radius:var(--radius-md);">
+                    <div>
+                      <div style="font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);">입사지원 풀세트</div>
+                      <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">회원 생성 → 이력서 생성 → 포지션에 지원</div>
+                    </div>
+                    <button class="btn btn--primary btn--sm">레시피 실행</button>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) var(--space-3);background:var(--color-bg-tertiary);border-radius:var(--radius-md);">
+                    <div>
+                      <div style="font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);">간편 입사지원 (이력서 기존)</div>
+                      <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">기존 회원 조회 → 이력서 조회 → 포지션에 지원</div>
+                    </div>
+                    <button class="btn btn--primary btn--sm">레시피 실행</button>
+                  </div>
+                </div>
+                <div style="margin-top:var(--space-3);">
+                  <button class="btn btn--ghost btn--sm">새로 대화로 진행 →</button>
                 </div>
               </div>
             </div>

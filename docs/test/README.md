@@ -4,7 +4,7 @@
 
 ## 사용법
 
-1. `docs/test/index.html`을 브라우저에서 열기 (향후 구현)
+1. `docs/test/index.html`을 브라우저에서 열기
 2. Feature 드롭다운에서 기능 선택
 3. 각 케이스의 Pass / Fail / Skip 버튼 클릭
 4. 상태는 localStorage에 자동 저장
@@ -13,12 +13,11 @@
 
 | 기능 | 파일 | 우선순위 | 케이스 수 | 마지막 업데이트 |
 |------|------|---------|----------|--------------|
-| 채팅 (Agent Loop) | web/chat | critical | - | 구현 후 |
-| 서브도메인 등록/관리 | web/subdomain | high | - | 구현 후 |
-| 레시피 실행 | web/recipe | high | - | 구현 후 |
-| 로그인/인증 | web/login | high | - | 구현 후 |
-| 워크스페이스 | web/settings | medium | - | 구현 후 |
-| 설정 (AI/Agent Loop) | web/settings | medium | - | 구현 후 |
+| 채팅 (Agent Loop) | web/chat.js | critical | 17 | 2026-06-18 |
+| 서브도메인 등록/관리 | web/subdomain.js | high | 14 | 2026-06-18 |
+| 레시피 실행 | web/recipe.js | high | 14 | 2026-06-18 |
+| 로그인/인증 | web/login.js | high | 10 | 2026-06-18 |
+| 설정 (워크스페이스+AI+AgentLoop) | web/settings.js | medium | 15 | 2026-06-18 |
 
 ## 우선순위 가이드
 
@@ -88,19 +87,21 @@
 ```
 docs/test/
 ├── README.md                  # 이 파일
-├── index.html                 # 통합 뷰어 (향후)
-├── shared/                    # 공통 테스트 인프라 (향후 생성)
+├── index.html                 # 통합 뷰어 (브라우저에서 열기)
+├── shared/
 │   ├── test-base.css          # 공통 스타일
 │   ├── test-manifest.js       # 파일 목록
 │   └── test-renderer.js       # 렌더링 엔진
-└── web/                       # 기능별 테스트 데이터 (향후 생성)
-    └── {기능}.js              # 구현 후 생성
+└── web/
+    ├── chat.js                # 채팅 (Agent Loop) — 17개 케이스
+    ├── subdomain.js           # 서브도메인 등록/관리 — 14개 케이스
+    ├── recipe.js              # 레시피 실행 — 14개 케이스
+    ├── login.js               # 로그인/인증 — 10개 케이스
+    └── settings.js            # 설정 — 15개 케이스
 ```
-
-> 현재는 README.md만 존재합니다. 실제 테스트 데이터 파일(.js)은 기능 구현 완료 후 qa-tester 에이전트가 생성합니다.
 
 ## 참고
 
 - 디자인 명세: `docs/design/web/*.cases.md` (케이스별 상세 시나리오)
 - 비즈니스 로직: `.kiro/steering/business-logic.md`
-- 테스트 데이터 파일(.js)은 실제 코드 구현 후 qa-tester 에이전트가 생성
+- 테스트 데이터 파일(.js) 추가/변경 시 `shared/test-manifest.js`에 항목 등록 필요
